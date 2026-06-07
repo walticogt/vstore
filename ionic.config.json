@@ -1,0 +1,7 @@
+{
+  "name": "vstore",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
