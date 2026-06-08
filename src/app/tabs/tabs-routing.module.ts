@@ -8,29 +8,31 @@ const routes: Routes = [
     component: TabsPage,
     children: [
       {
-        path: 'tab1',
-        loadChildren: () => import('../tab1/tab1.module').then(m => m.Tab1PageModule)
+        path: 'generate',
+        loadChildren: () =>
+          import('../modules/generate/generate.module').then((m) => m.GenerateModule),
       },
       {
-        path: 'tab2',
-        loadChildren: () => import('../tab2/tab2.module').then(m => m.Tab2PageModule)
+        path: 'link',
+        loadChildren: () => import('../modules/link/link.module').then((m) => m.LinkModule),
       },
       {
-        path: 'tab3',
-        loadChildren: () => import('../tab3/tab3.module').then(m => m.Tab3PageModule)
+        path: 'inventory',
+        loadChildren: () =>
+          import('../modules/inventory/inventory.module').then((m) => m.InventoryModule),
       },
       {
         path: '',
-        redirectTo: '/tabs/tab1',
-        pathMatch: 'full'
-      }
-    ]
+        redirectTo: '/tabs/generate',
+        pathMatch: 'full',
+      },
+    ],
   },
   {
     path: '',
-    redirectTo: '/tabs/tab1',
-    pathMatch: 'full'
-  }
+    redirectTo: '/tabs/generate',
+    pathMatch: 'full',
+  },
 ];
 
 @NgModule({
