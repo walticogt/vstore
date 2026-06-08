@@ -1,0 +1,106 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/link"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Vincular producto</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-note class="ion-padding-start">
+    Código: <code>{{ tagId.slice(0, 8) | uppercase }}</code>
+  </ion-note>
+
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <ion-list lines="full">
+      <ion-item>
+        <ion-input
+          label="Nombre *"
+          labelPlacement="stacked"
+          formControlName="name"
+          placeholder="Vestido…"
+        ></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          label="Precio (S/) *"
+          labelPlacement="stacked"
+          type="number"
+          inputmode="decimal"
+          formControlName="price"
+        ></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input label="Proveedor" labelPlacement="stacked" formControlName="supplier"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label position="stacked">SKU (autogenerado)</ion-label>
+        <ion-note slot="end"><code>{{ generatedSku }}</code></ion-note>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          label="Precio costo (S/)"
+          labelPlacement="stacked"
+          type="number"
+          inputmode="decimal"
+          formControlName="costPrice"
+        ></ion-input>
+      </ion-item>
+    </ion-list>
+
+    <ion-list-header>
+      <ion-label>Variantes</ion-label>
+      <ion-button fill="clear" (click)="addVariant()">
+        <ion-icon slot="start" name="add"></ion-icon>
+        Agregar
+      </ion-button>
+    </ion-list-header>
+
+    <div formArrayName="variants">
+      <ion-card *ngFor="let v of variants.controls; let i = index" [formGroupName]="i">
+        <ion-card-content>
+          <ion-grid>
+            <ion-row>
+              <ion-col size="5">
+                <ion-input label="Color" labelPlacement="stacked" formControlName="color"></ion-input>
+              </ion-col>
+              <ion-col size="4">
+                <ion-input label="Talla" labelPlacement="stacked" formControlName="size"></ion-input>
+              </ion-col>
+              <ion-col size="3">
+                <ion-input
+                  label="Stock"
+                  labelPlacement="stacked"
+                  type="number"
+                  inputmode="numeric"
+                  formControlName="stock"
+                ></ion-input>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+          <ion-button
+            fill="clear"
+            color="danger"
+            size="small"
+            [disabled]="variants.length === 1"
+            (click)="removeVariant(i)"
+          >
+            <ion-icon slot="start" name="trash"></ion-icon>
+            Quitar
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <ion-button
+      expand="block"
+      type="submit"
+      class="ion-margin-top"
+      [disabled]="form.invalid || saving"
+    >
+      <ion-icon slot="start" name="link"></ion-icon>
+      Vincular
+    </ion-button>
+  </form>
+</ion-content>

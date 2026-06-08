@@ -1,0 +1,64 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/inventory"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ product?.name || 'Producto' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-card *ngIf="product">
+    <ion-card-header>
+      <ion-card-subtitle *ngIf="product.sku">SKU: {{ product.sku }}</ion-card-subtitle>
+      <ion-card-title>S/ {{ product.price | number: '1.2-2' }}</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p *ngIf="product.supplier">Proveedor: {{ product.supplier }}</p>
+      <p>Stock total: <strong>{{ stockTotal }}</strong></p>
+      <p>
+        Código:
+        <strong *ngIf="activeTag"><code>{{ activeTag.id.slice(0, 8) | uppercase }}</code></strong>
+        <ion-text color="medium" *ngIf="!activeTag">sin código activo</ion-text>
+      </p>
+      <ion-button
+        expand="block"
+        fill="outline"
+        class="ion-margin-top"
+        [routerLink]="['/tabs/inventory/product', product.id, 'relink']"
+      >
+        <ion-icon slot="start" name="swap-horizontal"></ion-icon>
+        Re-vincular a otro código
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-list-header *ngIf="product">
+    <ion-label>Variantes</ion-label>
+  </ion-list-header>
+
+  <ion-list *ngIf="product">
+    <ion-item *ngFor="let variant of product.variants">
+      <ion-label>
+        <h3>{{ variant.color || '—' }} · {{ variant.size || '—' }}</h3>
+        <p>Stock: {{ variant.stock }}</p>
+      </ion-label>
+      <ion-buttons slot="end">
+        <ion-button fill="outline" (click)="adjustStock(variant, -1)" [disabled]="variant.stock === 0">
+          <ion-icon slot="icon-only" name="remove"></ion-icon>
+        </ion-button>
+        <ion-button fill="outline" (click)="adjustStock(variant, 1)">
+          <ion-icon slot="icon-only" name="add"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-item>
+
+    <ion-item *ngIf="product.variants.length === 0" lines="none">
+      <ion-label color="medium">Sin variantes registradas.</ion-label>
+    </ion-item>
+  </ion-list>
+
+  <ion-text *ngIf="product === null" color="medium">
+    <p class="ion-text-center ion-padding">Producto no encontrado.</p>
+  </ion-text>
+</ion-content>

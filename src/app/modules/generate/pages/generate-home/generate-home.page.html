@@ -1,0 +1,81 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Generar etiquetas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="syncNow()" [disabled]="isSyncing$ | async">
+        <ion-spinner *ngIf="isSyncing$ | async" slot="icon-only" name="lines-small"></ion-spinner>
+        <ion-icon *ngIf="!(isSyncing$ | async)" slot="icon-only" name="cloud-upload"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="generateAndPrint()">
+    <ion-list lines="full">
+      <ion-item>
+        <ion-select
+          label="Tipo de código"
+          formControlName="codeType"
+          interface="popover"
+        >
+          <ion-select-option value="QR">QR</ion-select-option>
+          <ion-select-option value="BARCODE">Barras</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item>
+        <ion-input
+          label="Cantidad"
+          type="number"
+          formControlName="quantity"
+          inputmode="numeric"
+          min="1"
+          max="200"
+        ></ion-input>
+      </ion-item>
+    </ion-list>
+
+    <ion-button
+      expand="block"
+      type="submit"
+      class="ion-margin-top"
+      [disabled]="form.invalid || generating"
+    >
+      <ion-icon slot="start" name="print"></ion-icon>
+      Generar e imprimir
+    </ion-button>
+  </form>
+
+  <p class="ion-text-end" *ngIf="lastSyncAt$ | async as last">
+    <ion-note>Última sincronización: {{ last | date: 'short' }}</ion-note>
+  </p>
+
+  <ion-list-header class="ion-margin-top">
+    <ion-label>Lotes generados</ion-label>
+  </ion-list-header>
+
+  <ion-list>
+    <ion-item
+      *ngFor="let batch of batches"
+      button
+      [routerLink]="['batch', batch.id]"
+    >
+      <ion-icon
+        slot="start"
+        [name]="batch.codeType === 'BARCODE' ? 'barcode' : 'qr-code'"
+      ></ion-icon>
+      <ion-label>
+        <h2>{{ batch.quantity }} etiquetas · {{ batch.codeType === 'BARCODE' ? 'Barras' : 'QR' }}</h2>
+        <p>{{ batch.createdAt | date: 'short' }}</p>
+      </ion-label>
+      <ion-note slot="end">{{ batch.id.slice(0, 8) | uppercase }}</ion-note>
+    </ion-item>
+
+    <ion-item *ngIf="batches.length === 0" lines="none">
+      <ion-label class="ion-text-center ion-text-wrap" color="medium">
+        Aún no hay lotes. Genera el primero arriba.
+      </ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>

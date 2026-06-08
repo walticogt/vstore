@@ -1,0 +1,60 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Vincular</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-button
+    *ngIf="cameraSupported"
+    expand="block"
+    (click)="scanWithCamera()"
+  >
+    <ion-icon slot="start" name="scan"></ion-icon>
+    Escanear con cámara
+  </ion-button>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Código manual</ion-card-title>
+      <ion-card-subtitle *ngIf="!cameraSupported">
+        La cámara solo está disponible en el dispositivo. Usa el código manual.
+      </ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item lines="full">
+        <ion-input
+          label="Código"
+          labelPlacement="stacked"
+          placeholder="Pega o escribe el código"
+          [(ngModel)]="manualCode"
+          (keyup.enter)="submitManual()"
+        ></ion-input>
+      </ion-item>
+      <ion-button
+        expand="block"
+        class="ion-margin-top"
+        [disabled]="!manualCode.trim()"
+        (click)="submitManual()"
+      >
+        Buscar código
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-list-header *ngIf="pending.length > 0">
+    <ion-label>Pendientes ({{ pending.length }})</ion-label>
+  </ion-list-header>
+
+  <ion-list>
+    <ion-item
+      *ngFor="let tag of pending"
+      button
+      (click)="resolveCode(tag.id)"
+    >
+      <ion-icon slot="start" name="qr-code"></ion-icon>
+      <ion-label><code>{{ tag.id.slice(0, 8) | uppercase }}</code></ion-label>
+      <ion-badge slot="end" color="medium">Pendiente</ion-badge>
+    </ion-item>
+  </ion-list>
+</ion-content>

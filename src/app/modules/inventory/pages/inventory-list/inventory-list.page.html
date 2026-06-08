@@ -1,0 +1,55 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Inventario</ion-title>
+    <ion-buttons slot="end">
+      <ion-button routerLink="/tabs/inventory/scan">
+        <ion-icon slot="icon-only" name="scan"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar color="primary">
+    <ion-searchbar
+      placeholder="Buscar por nombre, SKU o proveedor"
+      [(ngModel)]="searchTerm"
+      (ionInput)="onSearchChange()"
+      debounce="250"
+    ></ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-item *ngIf="suppliers.length > 0" lines="none">
+    <ion-select
+      label="Proveedor"
+      [(ngModel)]="supplierFilter"
+      (ionChange)="onSearchChange()"
+      interface="popover"
+      placeholder="Todos"
+    >
+      <ion-select-option value="">Todos</ion-select-option>
+      <ion-select-option *ngFor="let s of suppliers" [value]="s">{{ s }}</ion-select-option>
+    </ion-select>
+  </ion-item>
+
+  <ion-list>
+    <ion-item
+      *ngFor="let product of products"
+      button
+      [routerLink]="['product', product.id]"
+    >
+      <ion-label>
+        <h2>{{ product.name }}</h2>
+        <p>S/ {{ product.price | number: '1.2-2' }}<span *ngIf="product.supplier"> · {{ product.supplier }}</span></p>
+      </ion-label>
+      <ion-badge slot="end" [color]="stockTotal(product) > 0 ? 'primary' : 'danger'">
+        {{ stockTotal(product) }}
+      </ion-badge>
+    </ion-item>
+
+    <ion-item *ngIf="products.length === 0" lines="none">
+      <ion-label class="ion-text-center ion-text-wrap" color="medium">
+        No hay productos. Vincula un código desde la pestaña Vincular.
+      </ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>

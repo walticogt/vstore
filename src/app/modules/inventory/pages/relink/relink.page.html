@@ -1,0 +1,65 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/tabs/inventory/product/' + productId"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Re-vincular código</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-note class="ion-padding-start" *ngIf="product">
+    Producto: <strong>{{ product.name }}</strong>
+  </ion-note>
+
+  <ion-button *ngIf="cameraSupported" expand="block" class="ion-margin-top" (click)="scanWithCamera()">
+    <ion-icon slot="start" name="scan"></ion-icon>
+    Escanear código nuevo
+  </ion-button>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Código manual</ion-card-title>
+      <ion-card-subtitle *ngIf="!cameraSupported">
+        La cámara solo está disponible en el dispositivo.
+      </ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item lines="full">
+        <ion-input
+          label="Código nuevo (Pendiente)"
+          labelPlacement="stacked"
+          placeholder="Pega o escribe el código"
+          [(ngModel)]="manualCode"
+          (keyup.enter)="submitManual()"
+        ></ion-input>
+      </ion-item>
+      <ion-button
+        expand="block"
+        class="ion-margin-top"
+        [disabled]="!manualCode.trim()"
+        (click)="submitManual()"
+      >
+        Reemplazar
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-list-header *ngIf="pending.length > 0">
+    <ion-label>Códigos pendientes ({{ pending.length }})</ion-label>
+  </ion-list-header>
+
+  <ion-list>
+    <ion-item *ngFor="let tag of pending" button (click)="confirmReplace(tag.id)">
+      <ion-icon slot="start" name="qr-code"></ion-icon>
+      <ion-label><code>{{ tag.id.slice(0, 8) | uppercase }}</code></ion-label>
+      <ion-badge slot="end" color="medium">Pendiente</ion-badge>
+    </ion-item>
+
+    <ion-item *ngIf="pending.length === 0" lines="none">
+      <ion-label class="ion-text-center ion-text-wrap" color="medium">
+        No hay códigos pendientes. Genera un lote nuevo en la pestaña Generar.
+      </ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>

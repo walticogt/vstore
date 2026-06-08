@@ -1,0 +1,47 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/generate"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Detalle del lote</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-card *ngIf="batch">
+    <ion-card-header>
+      <ion-card-subtitle>{{ batch.id.slice(0, 8) | uppercase }}</ion-card-subtitle>
+      <ion-card-title>
+        {{ batch.quantity }} etiquetas · {{ batch.codeType === 'BARCODE' ? 'Barras' : 'QR' }}
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p>Creado: {{ batch.createdAt | date: 'medium' }}</p>
+      <p>Vinculadas: {{ assignedCount }} / {{ tags.length }}</p>
+      <ion-button
+        expand="block"
+        class="ion-margin-top"
+        [disabled]="reprinting"
+        (click)="reprint()"
+      >
+        <ion-icon slot="start" name="print"></ion-icon>
+        Reimprimir
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-list>
+    <ion-item *ngFor="let tag of tags">
+      <ion-icon
+        slot="start"
+        [name]="batch?.codeType === 'BARCODE' ? 'barcode' : 'qr-code'"
+      ></ion-icon>
+      <ion-label>
+        <code>{{ tag.id.slice(0, 8) | uppercase }}</code>
+      </ion-label>
+      <ion-badge slot="end" [color]="statusColor(tag.status)">
+        {{ statusLabel(tag.status) }}
+      </ion-badge>
+    </ion-item>
+  </ion-list>
+</ion-content>

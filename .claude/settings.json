@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -rf .scaffold)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('name:',p.name\\); console.log\\('deps:',Object.keys\\(p.dependencies\\).join\\(', '\\)\\);\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('angular/core:',p.dependencies['@angular/core']\\); console.log\\('ionic/angular:',p.dependencies['@ionic/angular']\\); console.log\\('@capacitor/core:',p.dependencies['@capacitor/core']\\);\")",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(ionic serve *)",
+      "Bash(npm view *)"
+    ]
+  }
+}
