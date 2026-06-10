@@ -1,2 +1,91 @@
-// For information on how to create your own theme, please refer to:
+// Tema VStore Professional Retail
+// Paleta: navy #0F172A (marca/toolbars), ámbar #F59E0B (acción/CTA),
+// verde #10B981 (escanear/éxito), neutro #787778. Fondo claro cálido, Roboto.
 // https://ionicframework.com/docs/theming/
+
+:root {
+  // ---- Primary: Ámbar (acción/CTA, tab activa) ----
+  --ion-color-primary: #f59e0b;
+  --ion-color-primary-rgb: 245, 158, 11;
+  --ion-color-primary-contrast: #1f2937;
+  --ion-color-primary-contrast-rgb: 31, 41, 55;
+  --ion-color-primary-shade: #d88b0a;
+  --ion-color-primary-tint: #f6a823;
+
+  // ---- Secondary: Navy (marca) ----
+  --ion-color-secondary: #0f172a;
+  --ion-color-secondary-rgb: 15, 23, 42;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #0d1425;
+  --ion-color-secondary-tint: #272e3f;
+
+  // ---- Tertiary: Verde (escanear) ----
+  --ion-color-tertiary: #10b981;
+  --ion-color-tertiary-rgb: 16, 185, 129;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #0ea372;
+  --ion-color-tertiary-tint: #28c08e;
+
+  // ---- Success: Verde ----
+  --ion-color-success: #10b981;
+  --ion-color-success-rgb: 16, 185, 129;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #0ea372;
+  --ion-color-success-tint: #28c08e;
+
+  // ---- Warning: Ámbar ----
+  --ion-color-warning: #f59e0b;
+  --ion-color-warning-rgb: 245, 158, 11;
+  --ion-color-warning-contrast: #1f2937;
+  --ion-color-warning-contrast-rgb: 31, 41, 55;
+  --ion-color-warning-shade: #d88b0a;
+  --ion-color-warning-tint: #f6a823;
+
+  // ---- Danger: Rojo ----
+  --ion-color-danger: #ef4444;
+  --ion-color-danger-rgb: 239, 68, 68;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #d23c3c;
+  --ion-color-danger-tint: #f15757;
+
+  // ---- Dark: Navy (toolbars usan color="dark") ----
+  --ion-color-dark: #0f172a;
+  --ion-color-dark-rgb: 15, 23, 42;
+  --ion-color-dark-contrast: #ffffff;
+  --ion-color-dark-contrast-rgb: 255, 255, 255;
+  --ion-color-dark-shade: #0d1425;
+  --ion-color-dark-tint: #272e3f;
+
+  // ---- Medium: Neutro ----
+  --ion-color-medium: #787778;
+  --ion-color-medium-rgb: 120, 119, 120;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #6a696a;
+  --ion-color-medium-tint: #868586;
+
+  // ---- Light ----
+  --ion-color-light: #f1efed;
+  --ion-color-light-rgb: 241, 239, 237;
+  --ion-color-light-contrast: #1f2937;
+  --ion-color-light-contrast-rgb: 31, 41, 55;
+  --ion-color-light-shade: #d4d2d1;
+  --ion-color-light-tint: #f2f0ef;
+
+  // ---- Fondo / texto / tipografía ----
+  --ion-background-color: #f7f5f3;
+  --ion-background-color-rgb: 247, 245, 243;
+  --ion-text-color: #1e293b;
+  --ion-text-color-rgb: 30, 41, 59;
+  --ion-font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+
+  // Superficies blancas para items/cards
+  --ion-item-background: #ffffff;
+  --ion-card-background: #ffffff;
+  --ion-toolbar-background: #0f172a;
+  --ion-tab-bar-background: #ffffff;
+}

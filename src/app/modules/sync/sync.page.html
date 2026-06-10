@@ -1,0 +1,122 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/generate"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Sincronización</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="refresh()" [disabled]="checkingDownload" title="Refrescar">
+        <ion-icon slot="icon-only" name="refresh"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-card>
+    <ion-card-content class="ion-text-center">
+      <ion-icon name="cloud-done" class="sync-icon" color="tertiary"></ion-icon>
+      <h2>{{ (isSyncing$ | async) ? 'Sincronizando…' : 'Sincronizado' }}</h2>
+      <p *ngIf="lastSyncAt$ | async as last" class="muted">
+        Última sincronización: {{ last | date: 'short' }}
+      </p>
+      <p *ngIf="!(lastSyncAt$ | async)" class="muted">Aún no se ha sincronizado.</p>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-grid>
+    <ion-row class="ion-text-center">
+      <ion-col>
+        <div class="stat">{{ stats.products }}</div>
+        <div class="stat-label">Productos</div>
+      </ion-col>
+      <ion-col>
+        <div class="stat">{{ stats.tags }}</div>
+        <div class="stat-label">Tags</div>
+      </ion-col>
+      <ion-col>
+        <div class="stat">{{ stats.batches }}</div>
+        <div class="stat-label">Lotes</div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <ion-item lines="full">
+    <ion-icon slot="start" name="cloud-upload" color="warning"></ion-icon>
+    <ion-label>Pendientes de subir</ion-label>
+    <ion-spinner *ngIf="checkingUpload" slot="end" name="lines-small"></ion-spinner>
+    <ion-badge
+      *ngIf="!checkingUpload"
+      slot="end"
+      [color]="pendingUpload > 0 ? 'warning' : 'medium'"
+    >
+      {{ pendingUpload }}
+    </ion-badge>
+  </ion-item>
+
+  <ion-item lines="full">
+    <ion-icon slot="start" name="cloud-download" color="tertiary"></ion-icon>
+    <ion-label>Pendientes por bajar</ion-label>
+    <ion-spinner *ngIf="checkingDownload" slot="end" name="lines-small"></ion-spinner>
+    <ion-badge
+      *ngIf="!checkingDownload"
+      slot="end"
+      [color]="pendingDownload > 0 ? 'tertiary' : 'medium'"
+    >
+      {{ pendingDownload }}
+    </ion-badge>
+  </ion-item>
+
+  <ion-note *ngIf="downloadError" color="danger" class="ion-padding-start">
+    No se pudo consultar la nube: {{ downloadError }}
+  </ion-note>
+
+  <ion-item lines="full">
+    <ion-icon
+      slot="start"
+      [name]="(isOnline$ | async) ? 'wifi' : 'cloud-offline'"
+      [color]="(isOnline$ | async) ? 'tertiary' : 'medium'"
+    ></ion-icon>
+    <ion-label>
+      Conexión
+      <p class="muted">{{ (isOnline$ | async) ? 'En línea' : 'Sin conexión — se subirá al reconectar' }}</p>
+    </ion-label>
+  </ion-item>
+
+  <ion-item lines="full">
+    <ion-label>
+      Sincronización automática
+      <p class="muted">Sube los cambios solos cuando hay internet</p>
+    </ion-label>
+    <ion-toggle slot="end" [(ngModel)]="autoSync" (ionChange)="onAutoSyncChange()"></ion-toggle>
+  </ion-item>
+
+  <ion-button
+    expand="block"
+    class="ion-margin-top"
+    [disabled]="isSyncing$ | async"
+    (click)="openSyncModal()"
+  >
+    <ion-spinner *ngIf="isSyncing$ | async" slot="start" name="lines-small"></ion-spinner>
+    <ion-icon *ngIf="!(isSyncing$ | async)" slot="start" name="sync"></ion-icon>
+    Sincronizar
+  </ion-button>
+  <ion-note color="medium" class="ion-padding-start">
+    Elige por categoría qué subir (⬆) y qué bajar (⬇), de forma independiente.
+  </ion-note>
+
+  <ion-button
+    expand="block"
+    fill="outline"
+    color="danger"
+    class="ion-margin-top"
+    [disabled]="isSyncing$ | async"
+    (click)="openDeleteModal()"
+  >
+    <ion-icon slot="start" name="trash"></ion-icon>
+    Eliminar del celular…
+  </ion-button>
+  <ion-note color="medium" class="ion-padding-start">
+    Borra categorías de este celular (la nube las conserva como respaldo).
+  </ion-note>
+</ion-content>

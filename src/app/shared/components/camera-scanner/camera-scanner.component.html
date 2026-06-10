@@ -1,0 +1,13 @@
+<div class="scanner-wrap">
+  <video #video class="scanner-video" muted autoplay playsinline></video>
+  <div class="scanner-frame"></div>
+</div>
+
+<p *ngIf="error" class="ion-text-center">
+  <ion-text color="danger">{{ error }}</ion-text>
+</p>
+
+<ion-button expand="block" fill="outline" color="medium" class="ion-margin-top" (click)="cancel()">
+  <ion-icon slot="start" name="close"></ion-icon>
+  Cancelar
+</ion-button>

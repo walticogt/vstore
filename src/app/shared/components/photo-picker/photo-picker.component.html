@@ -1,0 +1,38 @@
+<div class="photo-grid">
+  <ng-container *ngFor="let i of slots">
+    <!-- Foto cargada (previsualización) -->
+    <div class="slot thumb" *ngIf="slotState(i) === 'photo'">
+      <img [src]="photos[i]" alt="foto" />
+      <ion-icon name="close-circle" (click)="remove(i)"></ion-icon>
+    </div>
+
+    <!-- Cargando -->
+    <div class="slot loading" *ngIf="slotState(i) === 'loading'">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+
+    <!-- Botón agregar (cámara o galería) -->
+    <button type="button" class="slot add-photo" *ngIf="slotState(i) === 'add'" (click)="trigger()">
+      <ion-icon name="camera"></ion-icon>
+      <span>Foto</span>
+    </button>
+
+    <!-- Espacio vacío -->
+    <div class="slot empty" *ngIf="slotState(i) === 'empty'">
+      <ion-icon name="image-outline"></ion-icon>
+    </div>
+  </ng-container>
+</div>
+
+<ion-note color="medium" class="hint">
+  Hasta {{ max }} fotos referenciales (livianas). Toca para tomar o subir.
+</ion-note>
+
+<input
+  #fileInput
+  type="file"
+  accept="image/*"
+  capture="environment"
+  hidden
+  (change)="onFile($event)"
+/>

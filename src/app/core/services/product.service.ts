@@ -23,6 +23,7 @@ interface ProductRow {
   supplier: string | null;
   category: string | null;
   created_by: string | null;
+  images: string | null;
   created_at: string;
   updated_at: string;
   synced_at: string | null;
@@ -56,10 +57,12 @@ export class ProductService {
 
     const now = new Date().toISOString();
     const createdBy = this.session.currentUser;
+    const images = data.images?.length ? data.images : undefined;
     const product: Product = {
       ...data,
       id: uuidv4(),
       createdBy,
+      images,
       createdAt: now,
       updatedAt: now,
       variants: [],
@@ -67,8 +70,8 @@ export class ProductService {
 
     const set: { statement: string; values: unknown[] }[] = [
       {
-        statement: `INSERT INTO product (id, name, sku, price, cost_price, supplier, category, created_by, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        statement: `INSERT INTO product (id, name, sku, price, cost_price, supplier, category, created_by, images, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         values: [
           product.id,
           product.name,
@@ -78,6 +81,7 @@ export class ProductService {
           data.supplier ?? null,
           data.category ?? null,
           createdBy,
+          images ? JSON.stringify(images) : null,
           now,
           now,
         ],
@@ -96,6 +100,29 @@ export class ProductService {
 
     await this.db.executeSet(set);
     return product;
+  }
+
+  /**
+   * Agrega una variante a un producto existente y devuelve la variante creada (con id).
+   * Marca el producto como no sincronizado para que la sync lo vuelva a subir.
+   */
+  async addVariant(
+    productId: string,
+    data: Omit<ProductVariant, 'id' | 'productId'>,
+  ): Promise<ProductVariant> {
+    const variant: ProductVariant = { ...data, id: uuidv4(), productId };
+    await this.db.executeSet([
+      {
+        statement:
+          'INSERT INTO product_variant (id, product_id, color, size, stock) VALUES (?, ?, ?, ?, ?);',
+        values: [variant.id, productId, variant.color, variant.size, variant.stock],
+      },
+      {
+        statement: 'UPDATE product SET updated_at = ?, synced_at = NULL WHERE id = ?;',
+        values: [new Date().toISOString(), productId],
+      },
+    ]);
+    return variant;
   }
 
   /** Actualiza los campos escalares de un producto y refresca updatedAt. */
@@ -122,8 +149,15 @@ export class ProductService {
       }
     }
 
+    if (data.images !== undefined) {
+      fields.push('images = ?');
+      values.push(data.images.length ? JSON.stringify(data.images) : null);
+    }
+
     fields.push('updated_at = ?');
     values.push(new Date().toISOString());
+    // Marca el producto como no sincronizado para que la sync lo vuelva a subir.
+    fields.push('synced_at = NULL');
     values.push(id);
 
     await this.db.execute(`UPDATE product SET ${fields.join(', ')} WHERE id = ?;`, values);
@@ -176,12 +210,45 @@ export class ProductService {
     return rows.map((r) => r.supplier);
   }
 
-  /** Ajusta el stock de una variante por un delta; nunca baja de 0. */
+  /** Ajusta el stock de una variante por un delta; nunca baja de 0. Re-sincroniza el producto. */
   async updateVariantStock(variantId: string, delta: number): Promise<void> {
-    await this.db.execute(
-      'UPDATE product_variant SET stock = MAX(0, stock + ?) WHERE id = ?;',
-      [delta, variantId],
-    );
+    const now = new Date().toISOString();
+    await this.db.executeSet([
+      {
+        statement: 'UPDATE product_variant SET stock = MAX(0, stock + ?) WHERE id = ?;',
+        values: [delta, variantId],
+      },
+      {
+        statement: `UPDATE product SET updated_at = ?, synced_at = NULL
+                    WHERE id = (SELECT product_id FROM product_variant WHERE id = ?);`,
+        values: [now, variantId],
+      },
+    ]);
+  }
+
+  /**
+   * Quita una prenda (variante) del producto: desecha su código vinculado (queda en
+   * historial, fuera de circulación) y elimina la variante. Re-sincroniza el producto.
+   * Orden FK-seguro: primero desvincula el código, luego marca el producto, luego borra.
+   */
+  async removeVariant(variantId: string): Promise<void> {
+    const now = new Date().toISOString();
+    await this.db.executeSet([
+      {
+        statement:
+          "UPDATE tag_code SET status = 'DISCARDED', variant_id = NULL, synced_at = NULL WHERE variant_id = ? AND status = 'ASSIGNED';",
+        values: [variantId],
+      },
+      {
+        statement:
+          'UPDATE product SET updated_at = ?, synced_at = NULL WHERE id = (SELECT product_id FROM product_variant WHERE id = ?);',
+        values: [now, variantId],
+      },
+      {
+        statement: 'DELETE FROM product_variant WHERE id = ?;',
+        values: [variantId],
+      },
+    ]);
   }
 
   private async loadVariants(productId: string): Promise<ProductVariant[]> {
@@ -211,11 +278,24 @@ export class ProductService {
       supplier: r.supplier ?? undefined,
       category: r.category ?? undefined,
       createdBy: r.created_by ?? undefined,
+      images: this.parseImages(r.images),
       variants,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       syncedAt: r.synced_at ?? undefined,
     };
+  }
+
+  private parseImages(raw: string | null): string[] | undefined {
+    if (!raw) {
+      return undefined;
+    }
+    try {
+      const arr = JSON.parse(raw) as unknown;
+      return Array.isArray(arr) && arr.length ? (arr as string[]) : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   private mapVariant(r: VariantRow): ProductVariant {

@@ -1,4 +1,4 @@
-export type PrintLayout = '5x8';
+export type PrintLayout = '5x8' | '5x10';
 export type CodeType = 'QR' | 'BARCODE';
 
 /**

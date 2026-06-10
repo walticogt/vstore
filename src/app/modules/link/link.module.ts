@@ -3,12 +3,20 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 
+import { SharedModule } from '../../shared/shared.module';
 import { LinkRoutingModule } from './link-routing.module';
 import { LinkFormPage } from './pages/link-form/link-form.page';
 import { ScanPage } from './pages/scan/scan.page';
 
 @NgModule({
   declarations: [ScanPage, LinkFormPage],
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, IonicModule, LinkRoutingModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    IonicModule,
+    SharedModule,
+    LinkRoutingModule,
+  ],
 })
 export class LinkModule {}

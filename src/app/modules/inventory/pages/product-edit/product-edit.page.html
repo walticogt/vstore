@@ -1,0 +1,54 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/tabs/inventory/product/' + productId"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Editar producto</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <ion-list lines="full">
+      <ion-item>
+        <ion-input label="Nombre *" labelPlacement="stacked" formControlName="name"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          label="Precio (S/) *"
+          labelPlacement="stacked"
+          type="number"
+          inputmode="decimal"
+          formControlName="price"
+        ></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input label="Proveedor" labelPlacement="stacked" formControlName="supplier"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input label="SKU" labelPlacement="stacked" formControlName="sku"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          label="Precio costo (S/)"
+          labelPlacement="stacked"
+          type="number"
+          inputmode="decimal"
+          formControlName="costPrice"
+        ></ion-input>
+      </ion-item>
+    </ion-list>
+
+    <ion-list-header>
+      <ion-label>Fotos del producto</ion-label>
+    </ion-list-header>
+    <div class="ion-padding-start ion-padding-end">
+      <app-photo-picker [(photos)]="photos" [max]="3"></app-photo-picker>
+    </div>
+
+    <ion-button expand="block" type="submit" class="ion-margin-top" [disabled]="form.invalid || saving">
+      <ion-icon slot="start" name="save"></ion-icon>
+      Guardar cambios
+    </ion-button>
+  </form>
+</ion-content>

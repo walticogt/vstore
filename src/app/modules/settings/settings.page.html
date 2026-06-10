@@ -1,0 +1,89 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/generate"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Configuración</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-list-header>
+    <ion-label>Tienda</ion-label>
+  </ion-list-header>
+  <ion-list lines="full">
+    <ion-item>
+      <ion-input
+        label="Nombre de la tienda"
+        labelPlacement="stacked"
+        [(ngModel)]="storeName"
+        (ionBlur)="saveStoreName()"
+      ></ion-input>
+    </ion-item>
+  </ion-list>
+
+  <ion-list-header>
+    <ion-label>Impresión</ion-label>
+  </ion-list-header>
+  <ion-list lines="full">
+    <ion-item>
+      <ion-icon slot="start" name="qr-code" color="secondary"></ion-icon>
+      <ion-label>
+        QR
+        <p class="muted">Grid 5×8 · 40 por hoja A4</p>
+      </ion-label>
+    </ion-item>
+    <ion-item>
+      <ion-icon slot="start" name="barcode" color="secondary"></ion-icon>
+      <ion-label>
+        Barras
+        <p class="muted">Grid 5×10 · 50 por hoja A4</p>
+      </ion-label>
+    </ion-item>
+    <ion-item>
+      <ion-label>
+        Sincronización automática
+        <p class="muted">Subir/bajar al conectar a internet</p>
+      </ion-label>
+      <ion-toggle slot="end" [(ngModel)]="autoSync" (ionChange)="onAutoSyncChange()"></ion-toggle>
+    </ion-item>
+  </ion-list>
+
+  <ion-list-header>
+    <ion-label>Cuenta</ion-label>
+  </ion-list-header>
+  <ion-list lines="full">
+    <ion-item>
+      <ion-icon slot="start" name="person-circle" color="secondary"></ion-icon>
+      <ion-label>
+        {{ user }}
+        <p class="muted">Administrador</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+  <ion-button expand="block" fill="outline" color="danger" class="ion-margin-top" (click)="logout()">
+    <ion-icon slot="start" name="log-out"></ion-icon>
+    Cerrar sesión
+  </ion-button>
+
+  <ion-list-header class="ion-margin-top">
+    <ion-label>App</ion-label>
+  </ion-list-header>
+  <ion-list lines="full">
+    <ion-item>
+      <ion-label>Versión</ion-label>
+      <ion-note slot="end">{{ version }}</ion-note>
+    </ion-item>
+  </ion-list>
+
+  <ion-list-header class="ion-margin-top">
+    <ion-label color="danger">Zona de peligro</ion-label>
+  </ion-list-header>
+  <ion-button expand="block" color="danger" (click)="confirmReset()">
+    <ion-icon slot="start" name="trash"></ion-icon>
+    Borrar todos los datos (local y nube)
+  </ion-button>
+  <ion-note color="medium" class="ion-padding-start">
+    Empieza de cero. Borra productos, códigos y lotes en el dispositivo y en Firebase.
+  </ion-note>
+</ion-content>

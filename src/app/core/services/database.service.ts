@@ -5,6 +5,7 @@ import {
   SQLiteConnection,
   SQLiteDBConnection,
 } from '@capacitor-community/sqlite';
+import { Observable, Subject } from 'rxjs';
 
 import { SCHEMA_SQL } from './database.schema';
 
@@ -24,7 +25,14 @@ export class DatabaseService {
   private readonly sqlite = new SQLiteConnection(CapacitorSQLite);
   private readonly dbName = 'vstore';
   private db?: SQLiteDBConnection;
-  private initialized = false;
+  /** Promesa compartida de inicialización (evita carreras y dobles init). */
+  private initPromise?: Promise<void>;
+
+  /** Emite tras cada escritura (para disparar auto-sincronización). */
+  private readonly changed = new Subject<void>();
+  get changes$(): Observable<void> {
+    return this.changed.asObservable();
+  }
 
   /** True cuando corremos en navegador (sql.js) y hay que persistir a IndexedDB. */
   private get isWeb(): boolean {
@@ -32,14 +40,17 @@ export class DatabaseService {
   }
 
   /**
-   * Inicializa la base local y ejecuta el schema. Idempotente: si ya se inicializó
-   * o si la base ya existe, no recrea ni borra datos.
+   * Inicializa la base local (idempotente). Cualquier consulta también la dispara, así
+   * que no importa el orden de arranque: la BD siempre estará lista antes de usarse.
    */
-  async initDatabase(): Promise<void> {
-    if (this.initialized) {
-      return;
+  initDatabase(): Promise<void> {
+    if (!this.initPromise) {
+      this.initPromise = this.doInit();
     }
+    return this.initPromise;
+  }
 
+  private async doInit(): Promise<void> {
     if (this.isWeb) {
       // Persistencia del store de sql.js en IndexedDB (jeep-sqlite ya montado en main.ts).
       await this.sqlite.initWebStore();
@@ -61,28 +72,32 @@ export class DatabaseService {
     if (this.isWeb) {
       await this.sqlite.saveToStore(this.dbName);
     }
-
-    this.initialized = true;
   }
 
   /**
    * Migraciones idempotentes para bases ya creadas (el `CREATE TABLE IF NOT EXISTS`
-   * no agrega columnas a tablas existentes). Agrega columnas faltantes sin perder datos.
+   * no agrega columnas a tablas existentes). Usa la conexión directa (no `query`) para
+   * no auto-esperar la inicialización en curso.
    */
   private async runMigrations(): Promise<void> {
     await this.ensureColumn('product', 'created_by', 'created_by TEXT');
+    await this.ensureColumn('product', 'images', 'images TEXT');
     await this.ensureColumn('tag_code', 'assigned_by', 'assigned_by TEXT');
+    await this.ensureColumn('tag_code', 'variant_id', 'variant_id TEXT');
+    await this.ensureColumn('tag_code', 'origin', "origin TEXT NOT NULL DEFAULT 'GENERATED'");
   }
 
   private async ensureColumn(table: string, column: string, ddl: string): Promise<void> {
-    const cols = await this.query<{ name: string }>(`PRAGMA table_info(${table});`);
+    const result = await this.db!.query(`PRAGMA table_info(${table});`);
+    const cols = (result.values ?? []) as { name: string }[];
     if (!cols.some((c) => c.name === column)) {
-      await this.requireDb().execute(`ALTER TABLE ${table} ADD COLUMN ${ddl};`);
+      await this.db!.execute(`ALTER TABLE ${table} ADD COLUMN ${ddl};`);
     }
   }
 
   /** Ejecuta un SELECT parametrizado y devuelve las filas tipadas. */
   async query<T>(sql: string, params: unknown[] = []): Promise<T[]> {
+    await this.initDatabase();
     const db = this.requireDb();
     const result = await db.query(sql, params as never[]);
     return (result.values ?? []) as T[];
@@ -92,11 +107,13 @@ export class DatabaseService {
    * Ejecuta un INSERT/UPDATE/DELETE parametrizado. En web persiste el store tras escribir.
    */
   async execute(sql: string, params: unknown[] = []): Promise<void> {
+    await this.initDatabase();
     const db = this.requireDb();
     await db.run(sql, params as never[], false);
     if (this.isWeb) {
       await this.sqlite.saveToStore(this.dbName);
     }
+    this.changed.next();
   }
 
   /**
@@ -107,16 +124,26 @@ export class DatabaseService {
     if (set.length === 0) {
       return;
     }
+    await this.initDatabase();
     const db = this.requireDb();
     await db.executeSet(set as never[], false);
     if (this.isWeb) {
       await this.sqlite.saveToStore(this.dbName);
     }
+    this.changed.next();
+  }
+
+  /** Borra todos los datos locales (no el schema). Útil para empezar de cero. */
+  async resetAll(): Promise<void> {
+    await this.execute('DELETE FROM tag_code;');
+    await this.execute('DELETE FROM product_variant;');
+    await this.execute('DELETE FROM product;');
+    await this.execute('DELETE FROM print_batch;');
   }
 
   private requireDb(): SQLiteDBConnection {
     if (!this.db) {
-      throw new Error('DatabaseService: initDatabase() debe llamarse antes de consultar.');
+      throw new Error('DatabaseService: la base de datos no está disponible.');
     }
     return this.db;
   }

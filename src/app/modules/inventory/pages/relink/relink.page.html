@@ -1,5 +1,5 @@
 <ion-header>
-  <ion-toolbar color="primary">
+  <ion-toolbar color="dark">
     <ion-buttons slot="start">
       <ion-back-button [defaultHref]="'/tabs/inventory/product/' + productId"></ion-back-button>
     </ion-buttons>
@@ -10,19 +10,23 @@
 <ion-content class="ion-padding">
   <ion-note class="ion-padding-start" *ngIf="product">
     Producto: <strong>{{ product.name }}</strong>
+    <span *ngIf="variantLabel"> · Variante: <strong>{{ variantLabel }}</strong></span>
   </ion-note>
 
-  <ion-button *ngIf="cameraSupported" expand="block" class="ion-margin-top" (click)="scanWithCamera()">
+  <app-camera-scanner
+    *ngIf="scanning"
+    (scanned)="onScanned($event)"
+    (closed)="onScannerClosed()"
+  ></app-camera-scanner>
+
+  <ion-button *ngIf="canScan && !scanning" expand="block" class="ion-margin-top" (click)="startScan()">
     <ion-icon slot="start" name="scan"></ion-icon>
     Escanear código nuevo
   </ion-button>
 
-  <ion-card>
+  <ion-card *ngIf="!scanning">
     <ion-card-header>
       <ion-card-title>Código manual</ion-card-title>
-      <ion-card-subtitle *ngIf="!cameraSupported">
-        La cámara solo está disponible en el dispositivo.
-      </ion-card-subtitle>
     </ion-card-header>
     <ion-card-content>
       <ion-item lines="full">
@@ -45,21 +49,31 @@
     </ion-card-content>
   </ion-card>
 
-  <ion-list-header *ngIf="pending.length > 0">
-    <ion-label>Códigos pendientes ({{ pending.length }})</ion-label>
-  </ion-list-header>
-
-  <ion-list>
-    <ion-item *ngFor="let tag of pending" button (click)="confirmReplace(tag.id)">
-      <ion-icon slot="start" name="qr-code"></ion-icon>
-      <ion-label><code>{{ tag.id.slice(0, 8) | uppercase }}</code></ion-label>
-      <ion-badge slot="end" color="medium">Pendiente</ion-badge>
-    </ion-item>
-
-    <ion-item *ngIf="pending.length === 0" lines="none">
-      <ion-label class="ion-text-center ion-text-wrap" color="medium">
-        No hay códigos pendientes. Genera un lote nuevo en la pestaña Generar.
+  <ng-container *ngIf="!scanning">
+    <ion-list-header *ngIf="pending.length > 0">
+      <ion-label>
+        {{ manualCode.trim() ? 'Coincidencias' : 'Códigos pendientes' }} ({{ filteredPending.length }})
       </ion-label>
-    </ion-item>
-  </ion-list>
+    </ion-list-header>
+
+    <ion-list>
+      <ion-item *ngFor="let tag of filteredPending" button (click)="confirmReplace(tag.id)">
+        <ion-icon slot="start" [name]="tag.codeType === 'BARCODE' ? 'barcode' : 'qr-code'"></ion-icon>
+        <ion-label><code>{{ tag.id.slice(0, 8) | uppercase }}</code></ion-label>
+        <ion-badge slot="end" color="medium">Pendiente</ion-badge>
+      </ion-item>
+
+      <ion-item *ngIf="pending.length > 0 && filteredPending.length === 0" lines="none">
+        <ion-label class="ion-text-center ion-text-wrap" color="medium">
+          Sin coincidencias para "{{ manualCode.trim() | uppercase }}".
+        </ion-label>
+      </ion-item>
+
+      <ion-item *ngIf="pending.length === 0" lines="none">
+        <ion-label class="ion-text-center ion-text-wrap" color="medium">
+          No hay códigos pendientes. Genera un lote nuevo en la pestaña Generar.
+        </ion-label>
+      </ion-item>
+    </ion-list>
+  </ng-container>
 </ion-content>

@@ -1,13 +1,16 @@
 <ion-header>
-  <ion-toolbar color="primary">
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
     <ion-title>Inventario</ion-title>
     <ion-buttons slot="end">
-      <ion-button routerLink="/tabs/inventory/scan">
-        <ion-icon slot="icon-only" name="scan"></ion-icon>
+      <ion-button routerLink="/tabs/inventory/scan" title="Escanear">
+        <ion-icon slot="icon-only" name="camera"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
-  <ion-toolbar color="primary">
+  <ion-toolbar color="dark">
     <ion-searchbar
       placeholder="Buscar por nombre, SKU o proveedor"
       [(ngModel)]="searchTerm"
@@ -37,6 +40,12 @@
       button
       [routerLink]="['product', product.id]"
     >
+      <ion-thumbnail slot="start" class="inv-thumb">
+        <img *ngIf="product.images?.length" [src]="product.images?.[0]" alt="foto" />
+        <div class="no-photo" *ngIf="!product.images?.length">
+          <ion-icon name="image-outline"></ion-icon>
+        </div>
+      </ion-thumbnail>
       <ion-label>
         <h2>{{ product.name }}</h2>
         <p>S/ {{ product.price | number: '1.2-2' }}<span *ngIf="product.supplier"> · {{ product.supplier }}</span></p>

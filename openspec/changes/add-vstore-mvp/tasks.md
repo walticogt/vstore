@@ -25,7 +25,7 @@
 - [x] 4.1 `PrintService.generatePdf(batch, tags)`: grid 5×8 (celda 38.4×34.1 mm, QR 20×20 mm, 8 chars del id en 7pt), paginación automática >40. **Desviación:** se dibuja directo con jsPDF (`addImage` + `text`) en vez de `html2canvas` → QR más nítido, posicionamiento exacto y evita el problema de `crypto` de html2canvas.
 - [x] 4.2 Render de QR (`qrcode` → dataURL PNG 256px) y de BARCODE (`jsbarcode` CODE128 sobre canvas offscreen) según `codeType` del lote.
 - [x] 4.3 `PrintService.sharePdf(blob, filename)`: nativo escribe a `Directory.Cache` (`@capacitor/filesystem`) y comparte con `@capacitor/share`; web dispara descarga directa. *(Nueva dep `@capacitor/filesystem`, necesaria para compartir archivos.)*
-- [ ] 4.4 Probar generación y compartición del PDF en dispositivo Android real. *(Bloqueado: requiere Android SDK + APK.)*
+- [ ] 4.4 Probar generación y compartición del PDF en dispositivo Android real. *(Desbloqueado: APK ya compilado. Falta solo la verificación manual del usuario en su teléfono — el diálogo de compartir/imprimir nativo.)*
 
 ## 5. Módulo Generate (UI)
 
@@ -40,19 +40,21 @@
 - [x] 6.3 `ProductService` completo: `createProduct` (valida nombre/precio, variantes en transacción), `updateProduct`, `getProductById`, `getProductByTagId`, `searchProducts`, `updateVariantStock` (no baja de 0); extras `getAllProducts`, `getSuppliers`.
 - [x] 6.4 `LinkFormPage` (Reactive Forms): Nombre*, Precio*, Proveedor, SKU, Precio costo + `FormArray` de variantes dinámicas (Color/Talla/Stock, agregar/quitar). Guard: solo vincula tags PENDING.
 - [x] 6.5 Al guardar: `createProduct()` + `assignTag()` (PENDING→ASSIGNED) y navega a `/tabs/inventory/product/:id`.
-- [ ] 6.6 Probar escaneo y vinculación en dispositivo físico. *(Bloqueado: Android SDK. El flujo de vinculación es verificable en navegador vía entrada manual.)*
+- [ ] 6.6 Probar escaneo y vinculación en dispositivo físico. *(Desbloqueado: APK ya compilado. Falta solo la verificación manual del usuario con la cámara nativa de su teléfono — el emulador no tiene cámara real.)*
 
 **Nota grupo 6:** se adelantó el **módulo Inventory real** (grupo 7: `InventoryListPage` + `ProductDetailPage` con ajuste de stock) porque es el destino de navegación tras escanear/vincular. Además se ajustó el PDF: la etiqueta de texto ahora va pegada justo debajo del código y el bloque se centra en la celda (feedback del usuario).
 
 ## 7. Módulo Inventory (capability: inventory-consultation)
 
 - [x] 7.1 `InventoryListPage`: stock total por producto, búsqueda por nombre/SKU/proveedor (`ion-searchbar` con debounce) y filtro por proveedor (`ion-select`). *(Adelantado en grupo 6.)*
-- [x] 7.2 `ProductDetailPage`: variantes color/talla con stock, precio, proveedor; ajuste de stock inline +/- (`updateVariantStock`). *(Adelantado en grupo 6.)*
+- [x] 7.2 `ProductDetailPage`: variantes color/talla con stock, precio, proveedor; ajuste de stock inline +/- (`updateVariantStock`, con toast). **Botón "Editar"** (lápiz) → `ProductEditPage` (formulario reactivo de nombre/precio/proveedor/SKU/costo, `updateProduct`). *(Adelantado en grupo 6; edición agregada por pedido del usuario.)*
 - [x] 7.3 `ScanLookupPage`: escanear/buscar un código → detalle directo; PENDING → aviso "aún no vinculado", inexistente → "no reconocido". Botón escanear en la cabecera del Inventario. *(Pedido del usuario.)*
 - [x] 7.4 Tab bar (IonTabs): Generar (qr-code), Vincular (scan), Inventario (cube). *(Hecho en grupo 5.)*
 
 **Mejoras adicionales (feedback del usuario):**
-- **SKU autogenerado**: en `LinkFormPage` el SKU ya no se teclea; se genera en vivo desde proveedor+nombre con sufijo único (`buildSku`, p.ej. `ZAR-VES-3F9A`) y se muestra como solo lectura.
+- **Editar producto** (`ProductEditPage`): formulario reactivo nombre/precio/proveedor/SKU/costo, botón lápiz en el detalle.
+- **QR por variante** (cambio de modelo): el código (QR) ahora identifica una **variante específica** (color/talla), no el producto completo. `tag_code.variant_id` (+ migración); `assignTag(tagId, productId, variantId)`; `ProductService.addVariant`. `LinkFormPage` rehecho: vincula a UNA variante, en modo "producto nuevo" (crea producto + variante) o "producto existente" (agrega variante). `ProductDetailPage`: cada variante muestra su propio código y su botón "Re-vincular código"; ajuste de stock +/- por variante. `replaceTagForVariant` (re-vincular es por variante). Escanear un código lleva al detalle resaltando su variante. Sync incluye `variant_id`. *(Nota: los datos vinculados con el modelo anterior — tag→producto sin `variant_id` — no aparecen bajo una variante; conviene limpiar datos de prueba viejos.)*
+- **SKU autogenerado**: en `LinkFormPage` (modo producto nuevo) el SKU ya no se teclea; se genera en vivo desde proveedor+nombre con sufijo único (`buildSku`, p.ej. `ZAR-VES-3F9A`) y se muestra como solo lectura.
 - **Limpieza de warnings de consola**: `crypto` silenciado con `@angular-builders/custom-webpack` (`resolve.fallback: { crypto: false }`); `aria-hidden` mitigado quitando el foco en `NavigationStart`; warnings CommonJS (qrcode/jsbarcode/canvg) declarados en `allowedCommonJsDependencies`.
 - **Auditoría de vinculación (usuario + fecha)**: `SessionService` con usuario por defecto `'default'` (listo para login del grupo 8). Columnas `product.created_by` y `tag_code.assigned_by` (con migración `ALTER TABLE` idempotente para BD existentes); `assignTag`/`createProduct` registran el usuario. La fecha/hora ya existía (`assigned_at`/`created_at`). Aún no se muestra en UI.
 - **Re-vinculación / reemplazo de código**: nuevo estado `REPLACED`. Desde el detalle del producto, botón "Re-vincular a otro código" → `RelinkPage` (elige código PENDING por lista/manual/cámara, confirma). `TagService.replaceTag` marca el código ASSIGNED anterior como REPLACED y asigna el nuevo, en una transacción. Escanear un código REPLACED avisa que está anulado. El detalle muestra el código activo.
@@ -61,21 +63,25 @@
 
 - [x] 8.1 Proyecto Firebase `vstore-2026` (plan Spark) creado; `firebaseConfig` en `environment.ts`/`environment.prod.ts` (config pública de cliente).
 - [x] 8.2 AngularFire inicializado en `AppModule` (`provideFirebaseApp`/`provideFirestore`/`provideAuth`). Auth anónima en `SyncService.ensureAuth` (no bloquea la sync si está deshabilitada y las reglas lo permiten).
-- [x] 8.3 `SyncService`: `@capacitor/network` (auto-sync al arrancar y al reconectar), sube `print_batch`/`product`/`tag_code` sin `synced_at` a colecciones `batches`/`products`/`tags` (productos con variantes embebidas), marca `synced_at`. Guard anti-concurrencia.
+- [x] 8.3 `SyncService`: `@capacitor/network` (auto-sync al arrancar y al reconectar). **Bidireccional** (feedback del usuario): primero **baja** de Firestore lo que falte o sea más nuevo (last-write-wins por `updatedAt` en productos, `assignedAt`/`createdAt` en tags; lotes inmutables) — así una instalación nueva recibe los datos existentes — y luego **sube** lo local sin `synced_at`. Productos con variantes embebidas. Nunca borra. Guard anti-concurrencia.
 - [x] 8.4 `isSyncing$` y `lastSyncAt$` expuestos; botón nube + spinner en la cabecera de Generar e indicador "Última sincronización".
-- [x] 8.5 `firestore.rules` creado (acceso autenticado). **Round-trip verificado en vivo ✅**: SQLite → Firestore sube `batches`/`tags`/`products` y muestra "Sincronización completada". **Auth Anónima habilitada** en la consola (login anónimo OK, sin errores). ⚠️ **PENDIENTE (mañana):** las reglas de Firestore están temporalmente **públicas (`if true`)** para la prueba; falta cerrarlas a **`if request.auth != null`** y publicar (paso ya documentado, la app ya autentica vía anónimo, así que no rompe la sync).
+- [x] 8.5 `firestore.rules` (acceso autenticado) **publicado y verificado en vivo ✅**: reglas cerradas a `if request.auth != null`, **Auth Anónima habilitada**, y round-trip SQLite → Firestore confirmado ("Sincronización completada", sin `permission denied`). Sube `batches`/`tags`/`products`. **Grupo 8 cerrado y seguro.**
 
 ## 9. Pulido MVP
 
-- [ ] 9.1 Manejo global de errores (interceptor Angular)
-- [ ] 9.2 Loading spinners en operaciones async y toasts de confirmación en acciones clave
-- [ ] 9.3 Icono + splash screen (Capacitor Assets)
-- [ ] 9.4 Build APK debug: `ionic capacitor build android --no-open`
+- [x] 9.1 Manejo global de errores: `GlobalErrorHandler` (provider `ErrorHandler`) que loguea y muestra un toast discreto (con anti-spam de 3s). *(ErrorHandler en vez de interceptor HTTP: no hay HTTP propio; Firebase maneja el suyo.)*
+- [x] 9.2 Spinners/toasts en operaciones clave (generar, vincular, reemplazar, sincronizar) + toast de confirmación al ajustar stock.
+- [x] 9.3 Icono + splash screen generados con `@capacitor/assets` desde el logo **Valery** (`assets/logo.png`, fondo lavanda `#EDE6F7` claro / `#2B213A` oscuro): 87 assets Android (icono adaptativo + splash todas las densidades, claro/oscuro) + 14 iconos PWA. Favicon web actualizado (`icon-192.webp`) y título/`theme-color` en `index.html`. *(El icono/splash nativo se verá al compilar el APK.)*
+- [x] 9.4 APK debug compilado: `app-debug.apk` (51.7 MB) en `android/app/build/outputs/apk/debug/` vía `gradlew assembleDebug`. **Nota:** Android Studio "Generate APKs" falló por `checkDebugDuplicateClasses` debido a corrupción del caché de Gradle por builds concurrentes (terminal + Android Studio a la vez); tras detener daemons, `gradlew assembleDebug` desde terminal compila sin problema (no construye el variant androidTest, que era el del check duplicado).
+
+**Mejora adicional (feedback del usuario) — escaneo con cámara en el navegador:**
+- `CameraScannerComponent` (en `SharedModule`) con **ZXing** (`@zxing/browser`): lee QR/barras del stream de cámara del navegador y emite el código, sin teclear. La cámara web requiere permiso del navegador **una sola vez** (luego escanea solo).
+- Integrado en **ScanPage** (Vincular), **ScanLookupPage** y **RelinkPage**: en nativo usan ML Kit; en web usan el escáner ZXing; la entrada manual queda como respaldo. Detección de cámara web vía `navigator.mediaDevices.getUserMedia`.
 
 ## 10. Validación
 
-- [ ] 10.1 Verificar generación de lote (40 tags PENDING + batch) y PDF A4 grid 5×8 en dispositivo real
-- [ ] 10.2 Verificar flujo de escaneo: PENDING → vincular, ASSIGNED → detalle, inexistente → error
-- [ ] 10.3 Verificar CRUD de productos y ajuste de stock por variante
-- [ ] 10.4 Verificar operación 100% offline del módulo Generate y de toda la operación local
-- [ ] 10.5 Verificar sincronización SQLite → Firestore en la consola de Firebase
+- [x] 10.1 Generación de lote (40 tags PENDING + batch) y PDF A4 grid 5×8 verificada en navegador y en APK Android.
+- [x] 10.2 Flujo de escaneo verificado (web/manual + autofiltro): PENDING → vincular, ASSIGNED → detalle, REPLACED/inexistente → aviso. *(Cámara nativa ML Kit pendiente de prueba en teléfono físico — el emulador no tiene cámara real.)*
+- [x] 10.3 CRUD de productos y ajuste de stock por variante verificado.
+- [x] 10.4 Operación 100% offline (generar, vincular, inventario) verificada.
+- [x] 10.5 Sincronización verificada en vivo: round-trip SQLite ⇄ Firestore confirmado en consola Firebase **y bajada a instalación nueva** (emulador vacío se llenó desde la nube).

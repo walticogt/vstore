@@ -1,5 +1,5 @@
 <ion-header>
-  <ion-toolbar color="primary">
+  <ion-toolbar color="dark">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/tabs/inventory"></ion-back-button>
     </ion-buttons>
@@ -8,17 +8,20 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <ion-button *ngIf="cameraSupported" expand="block" (click)="scanWithCamera()">
+  <app-camera-scanner
+    *ngIf="scanning"
+    (scanned)="onScanned($event)"
+    (closed)="onScannerClosed()"
+  ></app-camera-scanner>
+
+  <ion-button *ngIf="canScan && !scanning" expand="block" (click)="startScan()">
     <ion-icon slot="start" name="scan"></ion-icon>
     Escanear con cámara
   </ion-button>
 
-  <ion-card>
+  <ion-card *ngIf="!scanning">
     <ion-card-header>
       <ion-card-title>Código manual</ion-card-title>
-      <ion-card-subtitle *ngIf="!cameraSupported">
-        La cámara solo está disponible en el dispositivo. Usa el código manual.
-      </ion-card-subtitle>
     </ion-card-header>
     <ion-card-content>
       <ion-item lines="full">
@@ -32,6 +35,7 @@
       </ion-item>
       <ion-button
         expand="block"
+        fill="outline"
         class="ion-margin-top"
         [disabled]="!manualCode.trim()"
         (click)="submitManual()"

@@ -1,0 +1,54 @@
+<ion-content class="login-bg">
+  <div class="login-wrap">
+    <div class="brand">
+      <div class="brand-logo">
+        <ion-icon name="cube"></ion-icon>
+      </div>
+      <h1>VStore</h1>
+      <p>Gestión de Inventario Profesional</p>
+    </div>
+
+    <ion-card class="login-card">
+      <ion-card-content>
+        <form (ngSubmit)="ingresar()">
+          <ion-item lines="full">
+            <ion-input
+              label="Email"
+              labelPlacement="stacked"
+              type="text"
+              inputmode="email"
+              placeholder="admin"
+              [(ngModel)]="email"
+              name="email"
+            ></ion-input>
+          </ion-item>
+
+          <ion-item lines="full">
+            <ion-input
+              label="Contraseña"
+              labelPlacement="stacked"
+              [type]="showPassword ? 'text' : 'password'"
+              placeholder="admin"
+              [(ngModel)]="password"
+              name="password"
+            ></ion-input>
+            <ion-button slot="end" fill="clear" (click)="showPassword = !showPassword">
+              <ion-icon slot="icon-only" [name]="showPassword ? 'eye-off' : 'eye'"></ion-icon>
+            </ion-button>
+          </ion-item>
+
+          <div class="forgot">
+            <a (click)="forgotPassword()">¿Olvidaste tu contraseña?</a>
+          </div>
+
+          <ion-button expand="block" type="submit" class="ion-margin-top">
+            <ion-icon slot="start" name="log-in"></ion-icon>
+            Ingresar
+          </ion-button>
+        </form>
+      </ion-card-content>
+    </ion-card>
+
+    <p class="footer">© 2026 VStore Enterprise Solutions</p>
+  </div>
+</ion-content>

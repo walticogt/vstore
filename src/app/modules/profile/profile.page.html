@@ -1,0 +1,28 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/generate"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Perfil</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-card>
+    <ion-card-content class="ion-text-center">
+      <ion-icon name="person-circle" class="avatar" color="secondary"></ion-icon>
+      <h2>{{ user }}</h2>
+      <p class="muted">Administrador</p>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-note class="ion-padding-start" color="medium">
+    El acceso con usuario y contraseña se habilitará próximamente. Por ahora la app
+    usa una sesión local por defecto.
+  </ion-note>
+
+  <ion-button expand="block" class="ion-margin-top" (click)="login()">
+    <ion-icon slot="start" name="log-in"></ion-icon>
+    Iniciar sesión
+  </ion-button>
+</ion-content>

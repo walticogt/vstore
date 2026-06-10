@@ -43,14 +43,36 @@ export class BatchDetailPage {
   }
 
   statusLabel(status: TagStatus): string {
-    return status === 'ASSIGNED' ? 'Vinculado' : status === 'REPLACED' ? 'Reemplazado' : 'Pendiente';
+    const labels: Record<TagStatus, string> = {
+      ASSIGNED: 'Vinculado',
+      REPLACED: 'Reemplazado',
+      DISCARDED: 'Desechado',
+      PENDING: 'Pendiente',
+    };
+    return labels[status];
   }
 
   statusColor(status: TagStatus): string {
-    return status === 'ASSIGNED' ? 'success' : status === 'REPLACED' ? 'warning' : 'medium';
+    const colors: Record<TagStatus, string> = {
+      ASSIGNED: 'success',
+      REPLACED: 'warning',
+      DISCARDED: 'dark',
+      PENDING: 'medium',
+    };
+    return colors[status];
   }
 
-  async reprint(): Promise<void> {
+  /** Reimprimir (abre el diálogo nativo, con opción de Imprimir). */
+  reprint(): Promise<void> {
+    return this.exportPdf('Imprimir etiquetas');
+  }
+
+  /** Compartir el PDF (WhatsApp, Gmail, Drive… adjuntando el archivo). */
+  share(): Promise<void> {
+    return this.exportPdf('Compartir PDF de etiquetas');
+  }
+
+  private async exportPdf(dialogTitle: string): Promise<void> {
     if (!this.batch || this.reprinting) {
       return;
     }
@@ -59,9 +81,9 @@ export class BatchDetailPage {
     await loading.present();
     try {
       const pdf = await this.print.generatePdf(this.batch, this.tags);
-      await this.print.sharePdf(pdf, `etiquetas-${this.batch.id.slice(0, 8)}.pdf`);
+      await this.print.sharePdf(pdf, `etiquetas-${this.batch.id.slice(0, 8)}.pdf`, dialogTitle);
     } catch (err) {
-      console.error('[BatchDetail] Error reimprimiendo:', err);
+      console.error('[BatchDetail] Error generando PDF:', err);
       const toast = await this.toastCtrl.create({
         message: 'No se pudo generar el PDF.',
         color: 'danger',

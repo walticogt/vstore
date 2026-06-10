@@ -32,6 +32,48 @@
  * https://ionicframework.com/docs/theming/dark-mode
  */
 
+/* Tema claro de marca (VStore Professional Retail). Dark mode del sistema
+   desactivado a propósito para mantener la paleta navy/ámbar consistente. */
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import "@ionic/angular/css/palettes/dark.system.css";
+/* @import "@ionic/angular/css/palettes/dark.system.css"; */
+
+/* ============================================================
+   VStore Professional Retail — estilo global
+   ============================================================ */
+
+ion-button {
+  --border-radius: 12px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+ion-card {
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+}
+
+ion-toolbar {
+  --border-width: 0;
+}
+
+ion-tab-bar {
+  --border: 0;
+  box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.06);
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+ion-item {
+  --border-radius: 12px;
+}
+
+ion-list-header ion-label {
+  font-weight: 700;
+  color: var(--ion-color-secondary);
+}
+
+h1, h2, h3 {
+  color: var(--ion-color-secondary);
+}

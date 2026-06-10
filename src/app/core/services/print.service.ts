@@ -6,23 +6,21 @@ import jsPDF from 'jspdf';
 import JsBarcode from 'jsbarcode';
 import * as QRCode from 'qrcode';
 
-import { PrintBatch } from '../models/print-batch.model';
+import { PrintBatch, PrintLayout } from '../models/print-batch.model';
 import { TagCode } from '../models/tag-code.model';
 
 /**
- * Layout de la hoja A4 (mm). Grid 5×8 = 40 stickers por hoja.
- * Sticker ≈ 38.4 × 34.1 mm; QR 20×20 mm centrado; código (8 chars) debajo.
+ * Layout de la hoja A4 (mm). El grid depende del tipo de código:
+ * QR → 5×8 (40 por hoja); Barras → 5×10 (50 por hoja).
  */
 const PAGE_W = 210;
 const PAGE_H = 297;
 const MARGIN = 5;
 const COLS = 5;
-const ROWS = 8;
 const GAP = 2;
-const PER_PAGE = COLS * ROWS;
 
-const CELL_W = (PAGE_W - 2 * MARGIN - (COLS - 1) * GAP) / COLS;
-const CELL_H = (PAGE_H - 2 * MARGIN - (ROWS - 1) * GAP) / ROWS;
+/** Filas según el layout del lote. */
+const ROWS_BY_LAYOUT: Record<PrintLayout, number> = { '5x8': 8, '5x10': 10 };
 
 const QR_SIZE = 20;          // mm
 const BARCODE_H = 12;        // mm
@@ -45,32 +43,41 @@ export class PrintService {
   async generatePdf(batch: PrintBatch, tags: TagCode[]): Promise<Blob> {
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
+    // El grid depende del layout del lote (5×8 para QR, 5×10 para barras).
+    const rows = ROWS_BY_LAYOUT[batch.layout];
+    const perPage = COLS * rows;
+    const cellW = (PAGE_W - 2 * MARGIN - (COLS - 1) * GAP) / COLS;
+    const cellH = (PAGE_H - 2 * MARGIN - (rows - 1) * GAP) / rows;
+
     for (let i = 0; i < tags.length; i++) {
       const tag = tags[i];
-      const indexInPage = i % PER_PAGE;
+      const indexInPage = i % perPage;
       if (i > 0 && indexInPage === 0) {
         doc.addPage();
       }
 
       const col = indexInPage % COLS;
       const row = Math.floor(indexInPage / COLS);
-      const cellX = MARGIN + col * (CELL_W + GAP);
-      const cellY = MARGIN + row * (CELL_H + GAP);
-      const centerX = cellX + CELL_W / 2;
+      const cellX = MARGIN + col * (cellW + GAP);
+      const cellY = MARGIN + row * (cellH + GAP);
+      const centerX = cellX + cellW / 2;
 
+      const shortCode = tag.id.slice(0, CODE_CHARS).toUpperCase();
+      // El QR codifica el id completo (único, aguanta el dato). El código de barras
+      // codifica solo el código corto (8 chars) para que las barras sean escaneables.
       const dataUrl =
         batch.codeType === 'BARCODE'
-          ? this.barcodeDataUrl(tag.id)
+          ? this.barcodeDataUrl(shortCode)
           : await this.qrDataUrl(tag.id);
 
       // Alto del código + separación + texto, para centrar el bloque verticalmente
       // y colocar la etiqueta pegada justo debajo del código.
       const codeH = batch.codeType === 'BARCODE' ? BARCODE_H : QR_SIZE;
       const blockH = codeH + LABEL_GAP + LABEL_H;
-      const codeTop = cellY + Math.max(1, (CELL_H - blockH) / 2);
+      const codeTop = cellY + Math.max(1, (cellH - blockH) / 2);
 
       if (batch.codeType === 'BARCODE') {
-        const bw = CELL_W - 4;
+        const bw = cellW - 4;
         doc.addImage(dataUrl, 'PNG', centerX - bw / 2, codeTop, bw, BARCODE_H);
       } else {
         doc.addImage(dataUrl, 'PNG', centerX - QR_SIZE / 2, codeTop, QR_SIZE, QR_SIZE);
@@ -88,7 +95,11 @@ export class PrintService {
    * Comparte el PDF mediante el diálogo nativo (Android) para imprimir/enviar.
    * En navegador dispara una descarga directa del archivo.
    */
-  async sharePdf(pdf: Blob, filename: string): Promise<void> {
+  async sharePdf(
+    pdf: Blob,
+    filename: string,
+    dialogTitle = 'Compartir etiquetas',
+  ): Promise<void> {
     if (Capacitor.getPlatform() === 'web') {
       const url = URL.createObjectURL(pdf);
       const anchor = document.createElement('a');
@@ -105,10 +116,12 @@ export class PrintService {
       data: base64,
       directory: Directory.Cache,
     });
+    // `files` adjunta el PDF como documento → el diálogo nativo de Android lo ofrece a
+    // WhatsApp/Gmail/Drive/Imprimir, etc., adjuntando el archivo al contacto elegido.
     await Share.share({
       title: filename,
-      url: written.uri,
-      dialogTitle: 'Imprimir / compartir etiquetas',
+      files: [written.uri],
+      dialogTitle,
     });
   }
 
@@ -127,9 +140,9 @@ export class PrintService {
     JsBarcode(canvas, text, {
       format: 'CODE128',
       displayValue: false,
-      margin: 0,
-      height: 60,
-      width: 1,
+      margin: 4,
+      height: 80,
+      width: 2,
     });
     return canvas.toDataURL('image/png');
   }

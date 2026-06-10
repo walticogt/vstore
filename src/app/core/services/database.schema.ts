@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS product (
   supplier TEXT,
   category TEXT,
   created_by TEXT,
+  images TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   synced_at TEXT
@@ -48,9 +49,12 @@ CREATE TABLE IF NOT EXISTS tag_code (
   assigned_at TEXT,
   assigned_by TEXT,
   product_id TEXT,
+  variant_id TEXT,
   print_batch_id TEXT NOT NULL,
+  origin TEXT NOT NULL DEFAULT 'GENERATED',
   synced_at TEXT,
   FOREIGN KEY (product_id) REFERENCES product(id),
+  FOREIGN KEY (variant_id) REFERENCES product_variant(id),
   FOREIGN KEY (print_batch_id) REFERENCES print_batch(id)
 );
 

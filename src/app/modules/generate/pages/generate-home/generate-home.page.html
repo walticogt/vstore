@@ -1,10 +1,12 @@
 <ion-header>
-  <ion-toolbar color="primary">
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
     <ion-title>Generar etiquetas</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="syncNow()" [disabled]="isSyncing$ | async">
-        <ion-spinner *ngIf="isSyncing$ | async" slot="icon-only" name="lines-small"></ion-spinner>
-        <ion-icon *ngIf="!(isSyncing$ | async)" slot="icon-only" name="cloud-upload"></ion-icon>
+      <ion-button routerLink="/sync" title="Sincronización">
+        <ion-icon slot="icon-only" name="sync"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -26,15 +28,41 @@
 
       <ion-item>
         <ion-input
-          label="Cantidad"
+          label="Páginas (hojas A4)"
           type="number"
-          formControlName="quantity"
+          formControlName="pages"
           inputmode="numeric"
           min="1"
-          max="200"
+          [max]="maxPages"
         ></ion-input>
+        <ion-note slot="end">máx. {{ maxPages }}</ion-note>
       </ion-item>
     </ion-list>
+
+    <ion-note class="ion-padding-start" color="medium">
+      {{ form.value.pages || 0 }} hoja(s) × {{ perSheet }} por hoja =
+      <strong>{{ totalCodes }} códigos</strong>
+      ({{ form.value.codeType === 'BARCODE' ? 'Barras 5×10' : 'QR 5×8' }})
+    </ion-note>
+
+    <!-- Previsualización A4 en vivo -->
+    <ion-card class="preview-card">
+      <ion-card-content>
+        <div class="preview-title">Previsualización de hoja A4</div>
+        <div
+          class="a4-sheet"
+          [style.grid-template-rows]="'repeat(' + previewRows + ', 1fr)'"
+        >
+          <div class="a4-cell" *ngFor="let c of previewCells">
+            <ion-icon [name]="form.value.codeType === 'BARCODE' ? 'barcode' : 'qr-code'"></ion-icon>
+          </div>
+        </div>
+        <div class="preview-foot">
+          <span>Cada código ≈ 4×2.5 cm</span>
+          <span>Hoja 1 de {{ form.value.pages || 1 }} · {{ perSheet }}/hoja</span>
+        </div>
+      </ion-card-content>
+    </ion-card>
 
     <ion-button
       expand="block"

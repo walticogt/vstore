@@ -1,15 +1,19 @@
 ## ADDED Requirements
 
 ### Requirement: Generación del PDF de etiquetas en hoja A4
-El sistema SHALL generar un documento PDF tamaño A4 (210×297 mm) con un grid 5×8 que disponga hasta 40 stickers por hoja, renderizando para cada `TagCode` su código QR/barras (mínimo 20×20 mm) y los primeros 8 caracteres del `id` como texto legible debajo.
+El sistema SHALL generar un documento PDF tamaño A4 (210×297 mm) cuyo grid depende del tipo de código del lote: **QR → 5×8 (40 por hoja)** y **Barras → 5×10 (50 por hoja)**. Para cada `TagCode` SHALL renderizar su código QR/barras y los primeros 8 caracteres del `id` como texto legible debajo. El sistema SHALL paginar automáticamente cuando la cantidad supere la capacidad de una hoja.
 
-#### Scenario: Generar PDF de un lote de 40
-- **WHEN** se solicita el PDF de un lote con 40 códigos
-- **THEN** se produce un PDF A4 con un grid 5×8 que contiene los 40 stickers, cada uno con su QR/barras y los primeros 8 caracteres del id visibles
+#### Scenario: Lote QR ocupa grid 5×8
+- **WHEN** se solicita el PDF de un lote QR de 40 códigos
+- **THEN** se produce un PDF A4 con grid 5×8 (40 stickers por hoja), cada uno con su QR y los primeros 8 caracteres del id
 
-#### Scenario: Tipo de código del lote
-- **WHEN** el lote es de tipo `BARCODE` en lugar de `QR`
-- **THEN** cada sticker renderiza un código de barras en vez de un QR, manteniendo el layout del grid
+#### Scenario: Lote de barras ocupa grid 5×10
+- **WHEN** se solicita el PDF de un lote de barras de 50 códigos
+- **THEN** se produce un PDF A4 con grid 5×10 (50 stickers por hoja), cada uno con su código de barras y los primeros 8 caracteres del id
+
+#### Scenario: Paginación por múltiples hojas
+- **WHEN** se solicita el PDF de un lote de N hojas
+- **THEN** el PDF contiene N páginas A4 con el grid correspondiente al tipo de código
 
 #### Scenario: Generación sin conexión
 - **WHEN** se genera el PDF sin conexión a internet

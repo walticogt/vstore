@@ -1,25 +1,29 @@
 <ion-header>
-  <ion-toolbar color="primary">
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
     <ion-title>Vincular</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <ion-button
-    *ngIf="cameraSupported"
-    expand="block"
-    (click)="scanWithCamera()"
-  >
+  <!-- Escáner con cámara -->
+  <app-camera-scanner
+    *ngIf="scanning"
+    (scanned)="onScanned($event)"
+    (closed)="onScannerClosed()"
+  ></app-camera-scanner>
+
+  <ion-button *ngIf="canScan && !scanning" expand="block" (click)="startScan()">
     <ion-icon slot="start" name="scan"></ion-icon>
     Escanear con cámara
   </ion-button>
 
-  <ion-card>
+  <!-- Respaldo manual -->
+  <ion-card *ngIf="!scanning">
     <ion-card-header>
       <ion-card-title>Código manual</ion-card-title>
-      <ion-card-subtitle *ngIf="!cameraSupported">
-        La cámara solo está disponible en el dispositivo. Usa el código manual.
-      </ion-card-subtitle>
     </ion-card-header>
     <ion-card-content>
       <ion-item lines="full">
@@ -33,6 +37,7 @@
       </ion-item>
       <ion-button
         expand="block"
+        fill="outline"
         class="ion-margin-top"
         [disabled]="!manualCode.trim()"
         (click)="submitManual()"
@@ -42,19 +47,29 @@
     </ion-card-content>
   </ion-card>
 
-  <ion-list-header *ngIf="pending.length > 0">
-    <ion-label>Pendientes ({{ pending.length }})</ion-label>
-  </ion-list-header>
+  <ng-container *ngIf="!scanning">
+    <ion-list-header *ngIf="pending.length > 0">
+      <ion-label>
+        {{ manualCode.trim() ? 'Coincidencias' : 'Pendientes' }} ({{ filteredPending.length }})
+      </ion-label>
+      <ion-button fill="clear" color="danger" (click)="discardPending()">
+        <ion-icon slot="start" name="trash"></ion-icon>
+        Desechar
+      </ion-button>
+    </ion-list-header>
 
-  <ion-list>
-    <ion-item
-      *ngFor="let tag of pending"
-      button
-      (click)="resolveCode(tag.id)"
-    >
-      <ion-icon slot="start" name="qr-code"></ion-icon>
-      <ion-label><code>{{ tag.id.slice(0, 8) | uppercase }}</code></ion-label>
-      <ion-badge slot="end" color="medium">Pendiente</ion-badge>
-    </ion-item>
-  </ion-list>
+    <ion-list>
+      <ion-item *ngFor="let tag of filteredPending" button (click)="resolveCode(tag.id)">
+        <ion-icon slot="start" [name]="tag.codeType === 'BARCODE' ? 'barcode' : 'qr-code'"></ion-icon>
+        <ion-label><code>{{ tag.id.slice(0, 8) | uppercase }}</code></ion-label>
+        <ion-badge slot="end" color="medium">Pendiente</ion-badge>
+      </ion-item>
+
+      <ion-item *ngIf="pending.length > 0 && filteredPending.length === 0" lines="none">
+        <ion-label class="ion-text-center ion-text-wrap" color="medium">
+          Sin coincidencias para "{{ manualCode.trim() | uppercase }}".
+        </ion-label>
+      </ion-item>
+    </ion-list>
+  </ng-container>
 </ion-content>

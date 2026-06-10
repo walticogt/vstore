@@ -1,0 +1,83 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>VStore</ion-title>
+    <ion-buttons slot="end">
+      <ion-button routerLink="/sync" title="Sincronización">
+        <ion-icon slot="icon-only" name="sync"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Hero -->
+  <div class="hero">
+    <h2>Hola, {{ user }}</h2>
+    <p>Gestión precisa para tu inventario retail en tiempo real.</p>
+  </div>
+
+  <!-- Generar QR -->
+  <ion-card class="action-card accent-primary" routerLink="/tabs/generate" button>
+    <ion-card-content>
+      <ion-icon class="action-icon" name="qr-code" color="secondary"></ion-icon>
+      <div>
+        <h3>Generar QR</h3>
+        <p>Crear nuevas etiquetas</p>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Escanear / Inventario -->
+  <ion-grid class="ion-no-padding">
+    <ion-row>
+      <ion-col size="6">
+        <ion-card class="action-card tall accent-tertiary" routerLink="/tabs/link" button>
+          <ion-card-content>
+            <ion-icon class="action-icon" name="scan" color="tertiary"></ion-icon>
+            <h3>Escanear</h3>
+            <p>Entrada / Salida</p>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+      <ion-col size="6">
+        <ion-card class="action-card tall accent-warning" routerLink="/tabs/inventory" button>
+          <ion-card-content>
+            <ion-icon class="action-icon" name="cube" color="warning"></ion-icon>
+            <h3>Inventario</h3>
+            <p>Stock actual</p>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- Stats -->
+  <ion-card class="stats-card">
+    <ion-card-content>
+      <h4>Optimización de almacén</h4>
+      <div class="stats-row">
+        <div>
+          <div class="stat-value">{{ stats.products }}</div>
+          <div class="stat-label">Total productos</div>
+        </div>
+        <div>
+          <div class="stat-value">{{ stats.pending }}</div>
+          <div class="stat-label">Pendientes subir</div>
+        </div>
+        <div>
+          <div class="stat-value">{{ stats.tags }}</div>
+          <div class="stat-label">Códigos</div>
+        </div>
+      </div>
+      <p class="sync-note">
+        <ng-container *ngIf="lastSyncAt$ | async as last; else nunca">
+          Sincronizado: {{ last | date: 'short' }}
+        </ng-container>
+        <ng-template #nunca>Aún no sincronizado</ng-template>
+      </p>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
