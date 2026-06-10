@@ -19,7 +19,9 @@ export interface Product {
   sku?: string;          // Código interno opcional
   price: number;         // Precio de venta (soles)
   costPrice?: number;    // Precio de costo
-  supplier?: string;     // Proveedor
+  supplier?: string;     // Nombre del proveedor (denormalizado, para mostrar/buscar)
+  supplierId?: string;   // FK → Supplier.id (catálogo de proveedores)
+  purchaseDoc?: string;  // Guía/boleta/factura con que llegó la mercadería
   category?: string;     // Categoría (futuro)
   variants: ProductVariant[];
   images?: string[];     // Paths locales o URLs Firebase Storage (futuro)

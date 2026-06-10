@@ -21,6 +21,8 @@ interface ProductRow {
   price: number;
   cost_price: number | null;
   supplier: string | null;
+  supplier_id: string | null;
+  purchase_doc: string | null;
   category: string | null;
   created_by: string | null;
   images: string | null;
@@ -70,8 +72,8 @@ export class ProductService {
 
     const set: { statement: string; values: unknown[] }[] = [
       {
-        statement: `INSERT INTO product (id, name, sku, price, cost_price, supplier, category, created_by, images, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        statement: `INSERT INTO product (id, name, sku, price, cost_price, supplier, supplier_id, purchase_doc, category, created_by, images, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         values: [
           product.id,
           product.name,
@@ -79,6 +81,8 @@ export class ProductService {
           product.price,
           data.costPrice ?? null,
           data.supplier ?? null,
+          data.supplierId ?? null,
+          data.purchaseDoc ?? null,
           data.category ?? null,
           createdBy,
           images ? JSON.stringify(images) : null,
@@ -138,6 +142,8 @@ export class ProductService {
       price: 'price',
       costPrice: 'cost_price',
       supplier: 'supplier',
+      supplierId: 'supplier_id',
+      purchaseDoc: 'purchase_doc',
       category: 'category',
     };
 
@@ -276,6 +282,8 @@ export class ProductService {
       price: r.price,
       costPrice: r.cost_price ?? undefined,
       supplier: r.supplier ?? undefined,
+      supplierId: r.supplier_id ?? undefined,
+      purchaseDoc: r.purchase_doc ?? undefined,
       category: r.category ?? undefined,
       createdBy: r.created_by ?? undefined,
       images: this.parseImages(r.images),

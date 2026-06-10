@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ToastController } from '@ionic/angular';
+import { AlertController, ToastController } from '@ionic/angular';
 import { v4 as uuidv4 } from 'uuid';
 
+import { Color, Size, Supplier } from '../../../../core/models/config.model';
 import { Product } from '../../../../core/models/product.model';
+import { ConfigService } from '../../../../core/services/config.service';
 import { NewProductInput, ProductService } from '../../../../core/services/product.service';
 import { TagService } from '../../../../core/services/tag.service';
 import { buildSku } from '../../../../core/utils/sku.util';
@@ -12,12 +14,9 @@ import { buildSku } from '../../../../core/utils/sku.util';
 type LinkMode = 'new' | 'existing';
 
 /**
- * LinkFormPage — vincula un código (QR) a UNA variante específica (capabilities:
- * product-management + tag-linking). El QR identifica una variante (color/talla).
- *
- * Modo "Producto nuevo": crea el producto con esta primera variante.
- * Modo "Producto existente": agrega esta variante a un producto ya creado.
- * En ambos casos el QR queda vinculado a esa variante.
+ * LinkFormPage — asistente de 2 pasos para vincular un código (QR/barras) a UNA prenda.
+ * Paso 1: el producto (nuevo o existente, proveedor, documento). Paso 2: la variante de
+ * este código (color de la paleta, talla por radio). Cada prenda es individual: stock 1.
  */
 @Component({
   selector: 'app-link-form',
@@ -28,11 +27,17 @@ type LinkMode = 'new' | 'existing';
 export class LinkFormPage {
   tagId = '';
   saving = false;
+  step: 1 | 2 = 1;
   mode: LinkMode = 'new';
   productList: Product[] = [];
   photos: string[] = [];
   /** Producto preseleccionado (al venir de "Agregar prenda"); bloquea la elección. */
   lockedProductId = '';
+
+  // Catálogos (configuración) que alimentan el paso 2 y el proveedor.
+  colors: Color[] = [];
+  sizes: Size[] = [];
+  suppliers: Supplier[] = [];
 
   /** Sufijo estable del SKU (no cambia mientras se edita el formulario). */
   readonly skuSuffix = uuidv4().replace(/-/g, '').slice(0, 4);
@@ -41,7 +46,8 @@ export class LinkFormPage {
     // Producto nuevo
     name: [''],
     price: [null],
-    supplier: [''],
+    supplierId: [''],
+    purchaseDoc: [''],
     costPrice: [null],
     // Producto existente
     productId: [''],
@@ -56,10 +62,13 @@ export class LinkFormPage {
     private readonly router: Router,
     private readonly tags: TagService,
     private readonly productService: ProductService,
+    private readonly config: ConfigService,
     private readonly toastCtrl: ToastController,
+    private readonly alertCtrl: AlertController,
   ) {}
 
   async ionViewWillEnter(): Promise<void> {
+    this.step = 1;
     this.tagId = this.route.snapshot.paramMap.get('tagId') ?? '';
     const tag = await this.tags.getTagById(this.tagId);
 
@@ -74,6 +83,9 @@ export class LinkFormPage {
     }
 
     this.productList = await this.productService.getAllProducts();
+    this.colors = await this.config.getColors();
+    this.sizes = await this.config.getSizes();
+    this.suppliers = await this.config.getSuppliers();
 
     // Si se llega desde "Agregar prenda" de un producto, queda preseleccionado y bloqueado.
     this.lockedProductId = this.route.snapshot.queryParamMap.get('product') ?? '';
@@ -85,10 +97,14 @@ export class LinkFormPage {
     }
   }
 
+  /** Nombre del proveedor seleccionado (para el SKU y la vista). */
+  get selectedSupplierName(): string {
+    return this.suppliers.find((s) => s.id === this.form.value.supplierId)?.name ?? '';
+  }
+
   /** SKU autogenerado en vivo a partir de proveedor + nombre (modo producto nuevo). */
   get generatedSku(): string {
-    const { name, supplier } = this.form.value as { name: string; supplier: string };
-    return buildSku(name, supplier, this.skuSuffix);
+    return buildSku(this.form.value.name ?? '', this.selectedSupplierName, this.skuSuffix);
   }
 
   /** Nombre del producto preseleccionado (para mostrarlo cuando está bloqueado). */
@@ -96,20 +112,55 @@ export class LinkFormPage {
     return this.productList.find((p) => p.id === this.lockedProductId)?.name ?? '';
   }
 
-  async save(): Promise<void> {
-    if (this.saving) {
-      return;
-    }
-    const v = this.form.value as {
-      name: string;
-      price: number | null;
-      supplier: string;
-      costPrice: number | null;
-      productId: string;
-      color: string;
-      size: string;
-    };
+  // --------------------------------------------------------------------------- Paso 2: paleta
+  selectColor(color: Color): void {
+    this.form.patchValue({ color: color.name });
+  }
 
+  isColorSelected(color: Color): boolean {
+    return this.form.value.color === color.name;
+  }
+
+  // --------------------------------------------------------------------------- Proveedor nuevo
+  async addSupplierInline(): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: 'Nuevo proveedor',
+      inputs: [
+        { name: 'name', type: 'text', placeholder: 'Nombre *' },
+        { name: 'whatsapp', type: 'tel', placeholder: 'WhatsApp (ej. 51987654321)' },
+        { name: 'address', type: 'text', placeholder: 'Dirección' },
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Agregar',
+          handler: (data: { name?: string; whatsapp?: string; address?: string }) => {
+            if (!data.name?.trim()) {
+              void this.showToast('El nombre es obligatorio.', 'danger');
+              return false;
+            }
+            void this.createSupplier(data);
+            return true;
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  private async createSupplier(data: { name?: string; whatsapp?: string; address?: string }): Promise<void> {
+    const id = await this.config.addSupplier({
+      name: data.name ?? '',
+      whatsapp: data.whatsapp,
+      address: data.address,
+    });
+    this.suppliers = await this.config.getSuppliers();
+    this.form.patchValue({ supplierId: id });
+  }
+
+  // --------------------------------------------------------------------------- Navegación
+  async goToStep2(): Promise<void> {
+    const v = this.form.value;
     if (this.mode === 'new' && (!v.name?.trim() || v.price == null)) {
       this.form.markAllAsTouched();
       await this.showToast('Nombre y precio son obligatorios.', 'danger');
@@ -119,6 +170,27 @@ export class LinkFormPage {
       await this.showToast('Elige un producto.', 'danger');
       return;
     }
+    this.step = 2;
+  }
+
+  backToStep1(): void {
+    this.step = 1;
+  }
+
+  async save(): Promise<void> {
+    if (this.saving) {
+      return;
+    }
+    const v = this.form.value as {
+      name: string;
+      price: number | null;
+      supplierId: string;
+      purchaseDoc: string;
+      costPrice: number | null;
+      productId: string;
+      color: string;
+      size: string;
+    };
 
     this.saving = true;
     try {
@@ -137,7 +209,9 @@ export class LinkFormPage {
           name: v.name.trim(),
           price: Number(v.price),
           sku: this.generatedSku,
-          supplier: v.supplier?.trim() || undefined,
+          supplier: this.selectedSupplierName || undefined,
+          supplierId: v.supplierId || undefined,
+          purchaseDoc: v.purchaseDoc?.trim() || undefined,
           costPrice: v.costPrice != null ? Number(v.costPrice) : undefined,
           images: this.photos.length ? this.photos : undefined,
           variants: [variant],
@@ -152,7 +226,7 @@ export class LinkFormPage {
       }
 
       await this.tags.assignTag(this.tagId, productId, variantId);
-      await this.showToast('Código vinculado a la variante.', 'success');
+      await this.showToast('Prenda vinculada a su código.', 'success');
       await this.router.navigate(['/tabs/inventory/product', productId]);
     } catch (err) {
       console.error('[LinkForm] Error vinculando:', err);

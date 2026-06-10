@@ -1,0 +1,22 @@
+.swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  display: inline-block;
+  margin-right: 12px;
+}
+
+.color-input {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  padding: 0;
+  margin-right: 12px;
+}
+
+.muted {
+  color: var(--ion-color-medium);
+  font-size: 0.8rem;
+}

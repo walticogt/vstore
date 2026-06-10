@@ -28,6 +28,9 @@ export class SyncService {
   private readonly online$ = new BehaviorSubject<boolean>(true);
   /** Marca que hubo cambios locales durante una sync en curso (subir al terminar). */
   private pushQueued = false;
+  /** Temporizador de seguridad: libera la bandera "sincronizando" si una sync se cuelga. */
+  private watchdog?: ReturnType<typeof setTimeout>;
+  private static readonly WATCHDOG_MS = 30000;
 
   get isSyncing$(): Observable<boolean> {
     return this.syncing$.asObservable();
@@ -104,10 +107,11 @@ export class SyncService {
       this.pushQueued = true;
       return;
     }
-    this.syncing$.next(true);
+    this.setSyncing(true);
     this.pushQueued = false;
     try {
       await this.ensureAuth();
+      await this.pushCatalogs();
       await this.syncBatches();
       await this.syncProducts();
       await this.syncTags();
@@ -116,8 +120,32 @@ export class SyncService {
     } catch (err) {
       console.error('[Sync] Error subiendo cambios:', err);
     } finally {
-      this.syncing$.next(false);
+      this.setSyncing(false);
       this.flushQueuedPush();
+    }
+  }
+
+  /**
+   * Cambia la bandera "sincronizando" y arma/limpia un watchdog: si una sincronización
+   * tarda más de WATCHDOG_MS (p. ej. una llamada a Firestore colgada en una red inestable),
+   * libera la bandera para que la UI no quede pegada en "Sincronizando…".
+   */
+  private setSyncing(value: boolean): void {
+    this.syncing$.next(value);
+    this.clearWatchdog();
+    if (value) {
+      this.watchdog = setTimeout(() => {
+        console.warn('[Sync] Watchdog: la sincronización tardó demasiado; liberando estado.');
+        this.watchdog = undefined;
+        this.syncing$.next(false);
+      }, SyncService.WATCHDOG_MS);
+    }
+  }
+
+  private clearWatchdog(): void {
+    if (this.watchdog) {
+      clearTimeout(this.watchdog);
+      this.watchdog = undefined;
     }
   }
 
@@ -144,35 +172,45 @@ export class SyncService {
       `[Sync] Nube → ${batches.length} lotes, ${productsPreview.length} productos, ${tagsPreview.length} tags. Auth: ${this.auth.currentUser ? 'sí (' + this.auth.currentUser.uid + ')' : 'NO'}`,
     );
 
+    // Carga local en bloque (3 consultas) en vez de una por registro.
+    const localBatchIds = await this.localIdSet('print_batch');
+    const localProd = await this.localTimestampMap('SELECT id, updated_at AS ts FROM product;');
+    const localTags = await this.localTimestampMap(
+      'SELECT id, COALESCE(assigned_at, created_at) AS ts FROM tag_code;',
+    );
+
     for (const b of batches) {
-      if (!(await this.exists('print_batch', b['id'] as string))) {
+      if (!localBatchIds.has(b['id'] as string)) {
         count++;
       }
     }
-
-    const products = productsPreview;
-    for (const p of products) {
-      const local = await this.localTimestamp(
-        'SELECT updated_at AS ts FROM product WHERE id = ?;',
-        p['id'] as string,
-      );
-      if (local === null || local < ((p['updatedAt'] as string) ?? '')) {
+    for (const p of productsPreview) {
+      const local = localProd.get(p['id'] as string);
+      if (local === undefined || local < ((p['updatedAt'] as string) ?? '')) {
         count++;
       }
     }
-
     for (const t of tagsPreview) {
       const cloudTs = ((t['assignedAt'] as string) || (t['createdAt'] as string)) ?? '';
-      const local = await this.localTimestamp(
-        'SELECT COALESCE(assigned_at, created_at) AS ts FROM tag_code WHERE id = ?;',
-        t['id'] as string,
-      );
-      if (local === null || local < cloudTs) {
+      const local = localTags.get(t['id'] as string);
+      if (local === undefined || local < cloudTs) {
         count++;
       }
     }
 
     return count;
+  }
+
+  /** Conjunto de ids locales de una tabla (1 consulta). */
+  private async localIdSet(table: string): Promise<Set<string>> {
+    const rows = await this.db.query<{ id: string }>(`SELECT id FROM ${table};`);
+    return new Set(rows.map((r) => r.id));
+  }
+
+  /** Mapa id → timestamp local a partir de un SELECT que devuelve (id, ts) (1 consulta). */
+  private async localTimestampMap(sql: string): Promise<Map<string, string>> {
+    const rows = await this.db.query<{ id: string; ts: string | null }>(sql);
+    return new Map(rows.map((r) => [r.id, r.ts ?? '']));
   }
 
   /**
@@ -256,14 +294,16 @@ export class SyncService {
     if (this.syncing$.value) {
       return;
     }
-    this.syncing$.next(true);
+    this.setSyncing(true);
     try {
       await this.ensureAuth();
       // 1) Bajar (nube → local): un dispositivo nuevo se trae los datos existentes.
+      await this.pullCatalogs();
       await this.pullBatches();
       await this.pullProducts();
       await this.pullTags();
       // 2) Subir (local → nube): registros aún sin syncedAt.
+      await this.pushCatalogs();
       await this.syncBatches();
       await this.syncProducts();
       await this.syncTags();
@@ -272,7 +312,7 @@ export class SyncService {
       console.error('[Sync] Error sincronizando:', err);
       throw err;
     } finally {
-      this.syncing$.next(false);
+      this.setSyncing(false);
       this.flushQueuedPush();
     }
   }
@@ -346,7 +386,7 @@ export class SyncService {
     if (this.syncing$.value) {
       return;
     }
-    this.syncing$.next(true);
+    this.setSyncing(true);
     try {
       await this.ensureAuth();
 
@@ -380,7 +420,7 @@ export class SyncService {
 
       this.lastSync$.next(new Date().toISOString());
     } finally {
-      this.syncing$.next(false);
+      this.setSyncing(false);
       this.flushQueuedPush();
     }
   }
@@ -399,7 +439,7 @@ export class SyncService {
     if (this.syncing$.value) {
       return;
     }
-    this.syncing$.next(true);
+    this.setSyncing(true);
     try {
       if (del.products) {
         this.setIgnored('products', true);
@@ -413,7 +453,7 @@ export class SyncService {
       }
       await this.deleteLocalCategories(del);
     } finally {
-      this.syncing$.next(false);
+      this.setSyncing(false);
     }
   }
 
@@ -455,7 +495,7 @@ export class SyncService {
     if (this.syncing$.value) {
       return;
     }
-    this.syncing$.next(true);
+    this.setSyncing(true);
     try {
       await this.ensureAuth();
       for (const col of ['tags', 'products', 'batches']) {
@@ -471,7 +511,7 @@ export class SyncService {
       await this.db.resetAll();
       this.lastSync$.next(null);
     } finally {
-      this.syncing$.next(false);
+      this.setSyncing(false);
     }
   }
 
@@ -531,8 +571,8 @@ export class SyncService {
       const set: { statement: string; values: unknown[] }[] = [
         {
           statement: `INSERT OR REPLACE INTO product
-            (id, name, sku, price, cost_price, supplier, category, created_by, images, created_at, updated_at, synced_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+            (id, name, sku, price, cost_price, supplier, supplier_id, purchase_doc, category, created_by, images, created_at, updated_at, synced_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
           values: [
             id,
             p['name'],
@@ -540,6 +580,8 @@ export class SyncService {
             p['price'],
             p['costPrice'] ?? null,
             p['supplier'] ?? null,
+            p['supplierId'] ?? null,
+            p['purchaseDoc'] ?? null,
             p['category'] ?? null,
             p['createdBy'] ?? null,
             cloudImages.length ? JSON.stringify(cloudImages) : null,
@@ -568,26 +610,30 @@ export class SyncService {
     }
     const docs = await this.fetchCollection('tags');
     const now = new Date().toISOString();
+    // Carga local en bloque (3 consultas) en vez de varias por cada tag.
+    const localTags = await this.localTimestampMap(
+      'SELECT id, COALESCE(assigned_at, created_at) AS ts FROM tag_code;',
+    );
+    const localBatchIds = await this.localIdSet('print_batch');
+    const localProdIds = await this.localIdSet('product');
+
     for (const t of docs) {
       const id = t['id'] as string;
       const cloudTs = ((t['assignedAt'] as string) || (t['createdAt'] as string)) ?? '';
-      const localTs = await this.localTimestamp(
-        'SELECT COALESCE(assigned_at, created_at) AS ts FROM tag_code WHERE id = ?;',
-        id,
-      );
+      const localTs = localTags.get(id);
 
-      if (localTs !== null && localTs >= cloudTs) {
+      if (localTs !== undefined && localTs >= cloudTs) {
         continue;
       }
 
       // Integridad FK: un tag necesita su lote local; si referencia un producto que no está
       // localmente, no se baja (evita violar llaves foráneas al bajar Tags sin Lotes/Productos).
       const batchId = t['printBatchId'] as string;
-      if (!(await this.exists('print_batch', batchId))) {
+      if (!localBatchIds.has(batchId)) {
         continue;
       }
       const refProductId = (t['productId'] as string) ?? null;
-      if (refProductId && !(await this.exists('product', refProductId))) {
+      if (refProductId && !localProdIds.has(refProductId)) {
         continue;
       }
 
@@ -629,6 +675,56 @@ export class SyncService {
   private async localTimestamp(sql: string, id: string): Promise<string | null> {
     const rows = await this.db.query<{ ts: string | null }>(sql, [id]);
     return rows.length ? (rows[0].ts ?? '') : null;
+  }
+
+  /**
+   * True si conviene sobrescribir la fila local con la de la nube: no existe, o existe pero
+   * ya está sincronizada (sin edición local pendiente). Evita pisar un cambio local sin subir.
+   */
+  private async shouldOverwrite(table: string, id: string): Promise<boolean> {
+    const rows = await this.db.query<{ synced_at: string | null }>(
+      `SELECT synced_at FROM ${table} WHERE id = ? LIMIT 1;`,
+      [id],
+    );
+    return rows.length === 0 || rows[0].synced_at !== null;
+  }
+
+  /** Baja los catálogos (colores, tallas, proveedores) de la nube. */
+  private async pullCatalogs(): Promise<void> {
+    const now = new Date().toISOString();
+
+    for (const c of await this.fetchCollection('colors')) {
+      const id = c['id'] as string;
+      if (!(await this.shouldOverwrite('color', id))) {
+        continue;
+      }
+      await this.db.execute(
+        'INSERT OR REPLACE INTO color (id, name, hex, sort_order, created_at, synced_at) VALUES (?, ?, ?, ?, ?, ?);',
+        [id, c['name'], c['hex'], c['sortOrder'] ?? 0, c['createdAt'] ?? now, now],
+      );
+    }
+
+    for (const s of await this.fetchCollection('sizes')) {
+      const id = s['id'] as string;
+      if (!(await this.shouldOverwrite('size', id))) {
+        continue;
+      }
+      await this.db.execute(
+        'INSERT OR REPLACE INTO size (id, label, sort_order, created_at, synced_at) VALUES (?, ?, ?, ?, ?);',
+        [id, s['label'], s['sortOrder'] ?? 0, s['createdAt'] ?? now, now],
+      );
+    }
+
+    for (const p of await this.fetchCollection('suppliers')) {
+      const id = p['id'] as string;
+      if (!(await this.shouldOverwrite('supplier', id))) {
+        continue;
+      }
+      await this.db.execute(
+        'INSERT OR REPLACE INTO supplier (id, name, whatsapp, address, created_at, synced_at) VALUES (?, ?, ?, ?, ?, ?);',
+        [id, p['name'], p['whatsapp'] ?? null, p['address'] ?? null, p['createdAt'] ?? now, now],
+      );
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -685,6 +781,39 @@ export class SyncService {
         await this.upload('products', id, docData);
       }
       await this.markSynced('product', id);
+    }
+  }
+
+  /** Sube los catálogos locales pendientes (colores, tallas, proveedores). */
+  private async pushCatalogs(): Promise<void> {
+    for (const r of await this.db.query<SyncRow>('SELECT * FROM color WHERE synced_at IS NULL;')) {
+      await this.upload('colors', r.id, {
+        id: r['id'],
+        name: r['name'],
+        hex: r['hex'],
+        sortOrder: r['sort_order'],
+        createdAt: r['created_at'],
+      });
+      await this.markSynced('color', r.id);
+    }
+    for (const r of await this.db.query<SyncRow>('SELECT * FROM size WHERE synced_at IS NULL;')) {
+      await this.upload('sizes', r.id, {
+        id: r['id'],
+        label: r['label'],
+        sortOrder: r['sort_order'],
+        createdAt: r['created_at'],
+      });
+      await this.markSynced('size', r.id);
+    }
+    for (const r of await this.db.query<SyncRow>('SELECT * FROM supplier WHERE synced_at IS NULL;')) {
+      await this.upload('suppliers', r.id, {
+        id: r['id'],
+        name: r['name'],
+        whatsapp: r['whatsapp'],
+        address: r['address'],
+        createdAt: r['created_at'],
+      });
+      await this.markSynced('supplier', r.id);
     }
   }
 

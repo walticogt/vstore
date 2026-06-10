@@ -1,0 +1,104 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/settings"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Catálogos</ion-title>
+  </ion-toolbar>
+  <ion-toolbar color="dark">
+    <ion-segment [(ngModel)]="segment">
+      <ion-segment-button value="colors"><ion-label>Colores</ion-label></ion-segment-button>
+      <ion-segment-button value="sizes"><ion-label>Tallas</ion-label></ion-segment-button>
+      <ion-segment-button value="suppliers"><ion-label>Proveedores</ion-label></ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- COLORES -->
+  <div *ngIf="segment === 'colors'">
+    <ion-list lines="full">
+      <ion-item>
+        <input type="color" [(ngModel)]="newColorHex" aria-label="Color" class="color-input" slot="start" />
+        <ion-input label="Nuevo color" labelPlacement="stacked" [(ngModel)]="newColorName" placeholder="Rojo"></ion-input>
+        <ion-button slot="end" (click)="addColor()"><ion-icon slot="icon-only" name="add"></ion-icon></ion-button>
+      </ion-item>
+    </ion-list>
+
+    <ion-list lines="full">
+      <ion-item *ngFor="let c of colors">
+        <span class="swatch" slot="start" [style.background]="c.hex"></span>
+        <ion-label>{{ c.name }}<p class="muted">{{ c.hex }}</p></ion-label>
+        <ion-button slot="end" fill="clear" color="danger" (click)="removeColor(c)">
+          <ion-icon slot="icon-only" name="trash"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item *ngIf="colors.length === 0" lines="none">
+        <ion-label color="medium">Sin colores. Agrega uno arriba.</ion-label>
+      </ion-item>
+    </ion-list>
+  </div>
+
+  <!-- TALLAS -->
+  <div *ngIf="segment === 'sizes'">
+    <ion-list lines="full">
+      <ion-item>
+        <ion-input label="Nueva talla" labelPlacement="stacked" [(ngModel)]="newSizeLabel" placeholder="M o 38"></ion-input>
+        <ion-button slot="end" (click)="addSize()"><ion-icon slot="icon-only" name="add"></ion-icon></ion-button>
+      </ion-item>
+    </ion-list>
+
+    <ion-list lines="full">
+      <ion-item *ngFor="let s of sizes">
+        <ion-label>{{ s.label }}</ion-label>
+        <ion-button slot="end" fill="clear" color="danger" (click)="removeSize(s)">
+          <ion-icon slot="icon-only" name="trash"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item *ngIf="sizes.length === 0" lines="none">
+        <ion-label color="medium">Sin tallas. Agrega una arriba.</ion-label>
+      </ion-item>
+    </ion-list>
+  </div>
+
+  <!-- PROVEEDORES -->
+  <div *ngIf="segment === 'suppliers'">
+    <ion-list lines="full">
+      <ion-item>
+        <ion-input label="Nombre *" labelPlacement="stacked" [(ngModel)]="newSupplierName" placeholder="Princesita"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input label="WhatsApp" labelPlacement="stacked" type="tel" [(ngModel)]="newSupplierWhatsapp" placeholder="51987654321"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input label="Dirección" labelPlacement="stacked" [(ngModel)]="newSupplierAddress" placeholder="Av. ..."></ion-input>
+      </ion-item>
+      <ion-button expand="block" class="ion-margin" (click)="addSupplier()">
+        <ion-icon slot="start" name="add"></ion-icon>
+        Agregar proveedor
+      </ion-button>
+    </ion-list>
+
+    <ion-list lines="full">
+      <ion-item *ngFor="let p of suppliers">
+        <ion-label>
+          {{ p.name }}
+          <p class="muted" *ngIf="p.whatsapp">WhatsApp: {{ p.whatsapp }}</p>
+          <p class="muted" *ngIf="p.address">{{ p.address }}</p>
+        </ion-label>
+        <ion-button slot="end" fill="clear" color="success" (click)="openWhatsApp(p)" title="WhatsApp">
+          <ion-icon slot="icon-only" name="logo-whatsapp"></ion-icon>
+        </ion-button>
+        <ion-button slot="end" fill="clear" (click)="editSupplier(p)" title="Editar">
+          <ion-icon slot="icon-only" name="create"></ion-icon>
+        </ion-button>
+        <ion-button slot="end" fill="clear" color="danger" (click)="removeSupplier(p)" title="Eliminar">
+          <ion-icon slot="icon-only" name="trash"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item *ngIf="suppliers.length === 0" lines="none">
+        <ion-label color="medium">Sin proveedores. Agrega uno arriba.</ion-label>
+      </ion-item>
+    </ion-list>
+  </div>
+</ion-content>

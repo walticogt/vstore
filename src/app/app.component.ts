@@ -3,6 +3,7 @@ import { NavigationStart, Router } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 
+import { ConfigService } from './core/services/config.service';
 import { DatabaseService } from './core/services/database.service';
 import { SessionService } from './core/services/session.service';
 import { SyncService } from './core/services/sync.service';
@@ -32,6 +33,7 @@ export class AppComponent implements OnInit {
     private readonly router: Router,
     private readonly sync: SyncService,
     private readonly session: SessionService,
+    private readonly config: ConfigService,
   ) {
     // Evita el warning de a11y "aria-hidden on a focused element": al navegar,
     // Ionic marca la página saliente con aria-hidden mientras el botón pulsado
@@ -51,6 +53,8 @@ export class AppComponent implements OnInit {
       // Verificación de disponibilidad (capability local-persistence).
       const probe = await this.database.query<{ ok: number }>('SELECT 1 AS ok;');
       console.log('[VStore] SQLite listo. SELECT 1 =>', probe[0]?.ok);
+      // Siembra catálogos por defecto (colores/tallas) y migra proveedores de texto a tabla.
+      await this.config.ensureDefaults();
       // Arranca el auto-sync a Firestore (no bloquea el arranque si falla).
       void this.sync.initAutoSync();
     } catch (err) {

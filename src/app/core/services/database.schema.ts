@@ -58,6 +58,32 @@ CREATE TABLE IF NOT EXISTS tag_code (
   FOREIGN KEY (print_batch_id) REFERENCES print_batch(id)
 );
 
+CREATE TABLE IF NOT EXISTS supplier (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  whatsapp TEXT,
+  address TEXT,
+  created_at TEXT NOT NULL,
+  synced_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS color (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  hex TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  synced_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS size (
+  id TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  synced_at TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_tag_code_status ON tag_code(status);
 CREATE INDEX IF NOT EXISTS idx_tag_code_batch ON tag_code(print_batch_id);
 CREATE INDEX IF NOT EXISTS idx_tag_code_product ON tag_code(product_id);
