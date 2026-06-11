@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 import { AlertController, ToastController } from '@ionic/angular';
 
 import { Color, Size, Supplier } from '../../../core/models/config.model';
 import { ConfigService } from '../../../core/services/config.service';
+import { whatsappUrl } from '../../../core/utils/whatsapp.util';
 
 type CatalogSegment = 'colors' | 'sizes' | 'suppliers';
 
@@ -32,6 +34,7 @@ export class CatalogsPage {
 
   constructor(
     private readonly config: ConfigService,
+    private readonly router: Router,
     private readonly toastCtrl: ToastController,
     private readonly alertCtrl: AlertController,
   ) {}
@@ -102,36 +105,9 @@ export class CatalogsPage {
     await this.reload();
   }
 
+  /** Abre la pantalla dedicada para editar el proveedor. */
   async editSupplier(supplier: Supplier): Promise<void> {
-    const alert = await this.alertCtrl.create({
-      header: 'Editar proveedor',
-      inputs: [
-        { name: 'name', type: 'text', value: supplier.name, placeholder: 'Nombre' },
-        { name: 'whatsapp', type: 'tel', value: supplier.whatsapp ?? '', placeholder: 'WhatsApp (ej. 51987654321)' },
-        { name: 'address', type: 'text', value: supplier.address ?? '', placeholder: 'Dirección' },
-      ],
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Guardar',
-          handler: (data: { name?: string; whatsapp?: string; address?: string }) => {
-            if (!data.name?.trim()) {
-              void this.toast('El nombre es obligatorio.');
-              return false;
-            }
-            void this.config
-              .updateSupplier(supplier.id, {
-                name: data.name,
-                whatsapp: data.whatsapp,
-                address: data.address,
-              })
-              .then(() => this.reload());
-            return true;
-          },
-        },
-      ],
-    });
-    await alert.present();
+    await this.router.navigate(['/catalogs/supplier', supplier.id]);
   }
 
   async removeSupplier(supplier: Supplier): Promise<void> {
@@ -141,14 +117,16 @@ export class CatalogsPage {
     }
   }
 
-  /** Abre WhatsApp con el proveedor (chat directo). */
+  /** Abre WhatsApp con el proveedor (chat con mensaje predefinido, editable antes de enviar). */
   async openWhatsApp(supplier: Supplier): Promise<void> {
-    const digits = (supplier.whatsapp ?? '').replace(/\D/g, '');
-    if (!digits) {
+    const storeName = localStorage.getItem('vstore.storeName') ?? 'mi tienda';
+    const message = `Hola ${supplier.name}, le escribe ${storeName}.`;
+    const url = whatsappUrl(supplier.whatsapp, message);
+    if (!url) {
       await this.toast('Este proveedor no tiene WhatsApp.');
       return;
     }
-    window.open(`https://wa.me/${digits}`, '_blank');
+    window.open(url, '_blank');
   }
 
   private async confirmDelete(what: string): Promise<boolean> {

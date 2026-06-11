@@ -1,0 +1,33 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/catalogs"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Editar proveedor</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-list lines="full" *ngIf="supplier">
+    <ion-item>
+      <ion-input label="Nombre *" labelPlacement="stacked" [(ngModel)]="name" placeholder="Princesita"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-input label="WhatsApp" labelPlacement="stacked" type="tel" inputmode="tel" [(ngModel)]="whatsapp" placeholder="987654321 o 51987654321"></ion-input>
+      <ion-button slot="end" fill="clear" color="success" (click)="openWhatsApp()" title="Abrir WhatsApp">
+        <ion-icon slot="icon-only" name="logo-whatsapp"></ion-icon>
+      </ion-button>
+    </ion-item>
+    <ion-note class="ion-padding-start">
+      Si escribes 9 dígitos (celular), se le antepone 51 (Perú) automáticamente.
+    </ion-note>
+    <ion-item>
+      <ion-textarea label="Dirección" labelPlacement="stacked" [(ngModel)]="address" placeholder="Av. ..." [autoGrow]="true"></ion-textarea>
+    </ion-item>
+  </ion-list>
+
+  <ion-button expand="block" class="ion-margin-top" [disabled]="saving" (click)="save()">
+    <ion-icon slot="start" name="save"></ion-icon>
+    Guardar
+  </ion-button>
+</ion-content>

@@ -5,14 +5,18 @@ import { RouterModule } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 
 import { CatalogsPage } from './catalogs.page';
+import { SupplierEditPage } from './supplier-edit.page';
 
 @NgModule({
-  declarations: [CatalogsPage],
+  declarations: [CatalogsPage, SupplierEditPage],
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    RouterModule.forChild([{ path: '', component: CatalogsPage }]),
+    RouterModule.forChild([
+      { path: '', component: CatalogsPage },
+      { path: 'supplier/:id', component: SupplierEditPage },
+    ]),
   ],
 })
 export class CatalogsPageModule {}
