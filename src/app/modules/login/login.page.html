@@ -46,6 +46,13 @@
             Ingresar
           </ion-button>
         </form>
+
+        <div class="divider"><span>o</span></div>
+
+        <ion-button expand="block" fill="outline" (click)="loginGoogle()" [disabled]="loadingGoogle">
+          <ion-icon slot="start" name="logo-google"></ion-icon>
+          Iniciar con Google
+        </ion-button>
       </ion-card-content>
     </ion-card>
 

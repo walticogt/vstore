@@ -7,7 +7,7 @@
 ## 2. Autenticación con Google + sesión con rol
 
 - [ ] 2.1 Configurar Google provider en Firebase Auth (`@angular/fire/auth`); flujo web (popup/redirect) y nativo.
-- [ ] 2.2 Botón "Iniciar con Google" en el login (conservando el login local).
+- [x] 2.2 Botón "Iniciar con Google" en el login (conservando el login local).
 - [x] 2.3 Configurar `OWNER_EMAIL = walther.huanca@gmail.com` y la lógica: primer login → `comprador`, salvo dueño → `admin`. Login local → `admin`.
 - [x] 2.4 Extender `SessionService` para cargar/crear el `AppUser` y exponer `currentRole`.
 - [x] 2.5 Caché de sesión offline: guardar en localStorage el último usuario (email + rol) y permitir ingreso sin internet con ese rol; sincronizar al reconectar.
