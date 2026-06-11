@@ -41,9 +41,10 @@ La app usa Firebase (Firestore + Auth anónima ya configurada vía `@angular/fir
 - Configurar Google como proveedor en Firebase Console y `OWNER_EMAIL` en el proyecto.
 - Rollout incremental: primero auth+roles+sesión, luego dashboard por rol, luego gestión de usuarios, luego sync. Rollback = ocultar la pantalla de gestión y dejar el login actual.
 
-## Open Questions
+## Decisiones resueltas (respuestas del dueño)
 
-- **Correo del dueño**: ¿cuál es? (pendiente de proveer para configurarlo).
-- ¿La cuenta de **login local** se considera siempre `admin`, o también se le asigna rol desde la gestión?
-- ¿"Borrar todo" (`resetEverything`) debe borrar usuarios, o también protegerlos?
-- ¿Endurecer reglas Firestore de `users` ahora o en iteración aparte?
+- **Correo del dueño** = `walther.huanca@gmail.com` → admin automático. Se configura en `environment` como `OWNER_EMAIL`.
+- **Login local** = se trata siempre como `admin` (dueño).
+- **"Borrar todo" (`resetEverything`) PROTEGE a los usuarios**: nunca borra `app_user` (ni el selectivo ni el total).
+- **Sesión offline (caché)**: se guarda en localStorage el último usuario (email + rol). Firebase Auth ya persiste la sesión localmente; además se cachea el rol para que la app funcione sin red. Un vendedor sin internet entra, ve los productos locales y vende; el auto-sync sube los cambios al reconectar.
+- **Reglas Firestore de `users`**: se endurecen — solo el `admin` puede escribir el campo `role`; cada usuario puede crear su propio doc como `comprador`.

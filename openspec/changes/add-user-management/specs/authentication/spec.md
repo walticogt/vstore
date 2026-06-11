@@ -35,3 +35,14 @@ El sistema SHALL exponer en la sesión activa el rol del usuario autenticado, pa
 #### Scenario: Rol disponible tras login
 - **WHEN** un usuario inicia sesión
 - **THEN** la app conoce su rol actual y lo usa para mostrar su dashboard y permisos
+
+### Requirement: Sesión offline con caché del último usuario
+El sistema SHALL recordar en caché local al último usuario que inició sesión (identidad + rol) y SHALL permitir el ingreso a la app **sin conexión** usando esa caché, para que el usuario (p. ej. un vendedor) trabaje con los datos locales y sincronice al recuperar internet.
+
+#### Scenario: Ingreso sin internet con el último usuario
+- **WHEN** el dispositivo no tiene internet y el último usuario ya había iniciado sesión antes
+- **THEN** el sistema le permite ingresar con su rol cacheado y operar sobre los datos locales
+
+#### Scenario: Vender sin internet y sincronizar al reconectar
+- **WHEN** un vendedor sin internet registra una venta
+- **THEN** la venta se guarda localmente y se sincroniza automáticamente cuando vuelve la conexión

@@ -62,6 +62,14 @@ CREATE TABLE IF NOT EXISTS tag_code (
   FOREIGN KEY (print_batch_id) REFERENCES print_batch(id)
 );
 
+CREATE TABLE IF NOT EXISTS app_user (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'comprador',
+  created_at TEXT NOT NULL,
+  synced_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS supplier (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
