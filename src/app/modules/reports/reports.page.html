@@ -1,0 +1,66 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/dashboard"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Reportes de ventas</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Filtros -->
+  <ion-segment [(ngModel)]="group" (ionChange)="onFilterChange()">
+    <ion-segment-button value="day"><ion-label>Por día</ion-label></ion-segment-button>
+    <ion-segment-button value="month"><ion-label>Por mes</ion-label></ion-segment-button>
+  </ion-segment>
+
+  <ion-list lines="full">
+    <ion-item>
+      <ion-input label="Desde" labelPlacement="stacked" type="date" [(ngModel)]="from" (ionChange)="onFilterChange()"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-input label="Hasta" labelPlacement="stacked" type="date" [(ngModel)]="to" (ionChange)="onFilterChange()"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-select label="Proveedor" labelPlacement="stacked" [(ngModel)]="supplierId" (ionChange)="onFilterChange()" interface="popover" placeholder="Todos">
+        <ion-select-option value="">Todos</ion-select-option>
+        <ion-select-option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+  </ion-list>
+
+  <!-- Resumen -->
+  <ion-grid class="summary">
+    <ion-row class="ion-text-center">
+      <ion-col>
+        <div class="stat">S/ {{ summary.totalSold | number: '1.2-2' }}</div>
+        <div class="stat-label">Vendido</div>
+      </ion-col>
+      <ion-col>
+        <div class="stat">{{ summary.unitsSold }}</div>
+        <div class="stat-label">Unidades</div>
+      </ion-col>
+      <ion-col>
+        <div class="stat loss">{{ summary.lost }}</div>
+        <div class="stat-label">Extraviadas</div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- Desglose por periodo -->
+  <ion-list-header>
+    <ion-label>{{ group === 'day' ? 'Ventas por día' : 'Ventas por mes' }}</ion-label>
+  </ion-list-header>
+  <ion-list lines="full">
+    <ion-item *ngFor="let r of rows">
+      <ion-label>
+        {{ r.period }}
+        <p class="muted">{{ r.units }} unidad(es)</p>
+      </ion-label>
+      <ion-note slot="end"><strong>S/ {{ r.total | number: '1.2-2' }}</strong></ion-note>
+    </ion-item>
+    <ion-item *ngIf="rows.length === 0" lines="none">
+      <ion-label color="medium">Sin ventas en el periodo seleccionado.</ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>

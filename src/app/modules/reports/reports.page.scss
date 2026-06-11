@@ -1,0 +1,22 @@
+.summary {
+  margin-top: 0.5rem;
+
+  .stat {
+    font-size: 1.3rem;
+    font-weight: 700;
+
+    &.loss {
+      color: var(--ion-color-danger);
+    }
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--ion-color-medium);
+  }
+}
+
+.muted {
+  color: var(--ion-color-medium);
+  font-size: 0.8rem;
+}
