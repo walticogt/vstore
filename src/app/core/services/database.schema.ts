@@ -39,6 +39,10 @@ CREATE TABLE IF NOT EXISTS product_variant (
   color TEXT,
   size TEXT,
   stock INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'ACTIVE',
+  sold_at TEXT,
+  sale_price REAL,
+  lost_at TEXT,
   FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
 );
 

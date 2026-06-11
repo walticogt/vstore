@@ -87,6 +87,10 @@ export class DatabaseService {
     await this.ensureColumn('tag_code', 'origin', "origin TEXT NOT NULL DEFAULT 'GENERATED'");
     await this.ensureColumn('product', 'supplier_id', 'supplier_id TEXT');
     await this.ensureColumn('product', 'purchase_doc', 'purchase_doc TEXT');
+    await this.ensureColumn('product_variant', 'status', "status TEXT NOT NULL DEFAULT 'ACTIVE'");
+    await this.ensureColumn('product_variant', 'sold_at', 'sold_at TEXT');
+    await this.ensureColumn('product_variant', 'sale_price', 'sale_price REAL');
+    await this.ensureColumn('product_variant', 'lost_at', 'lost_at TEXT');
   }
 
   private async ensureColumn(table: string, column: string, ddl: string): Promise<void> {

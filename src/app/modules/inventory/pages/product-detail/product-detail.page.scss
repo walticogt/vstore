@@ -133,6 +133,20 @@
   flex-shrink: 0;
 }
 
+// Prenda vendida o extraviada: en gris (queda en el registro para reportes).
+ion-card.inactive {
+  opacity: 0.6;
+  filter: grayscale(0.7);
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
 .supplier-row {
   display: flex;
   align-items: center;

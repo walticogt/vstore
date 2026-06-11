@@ -6,12 +6,18 @@ import { DatabaseService } from './database.service';
 import { SessionService } from './session.service';
 import { TagService } from './tag.service';
 
+/** Datos de una variante al crearla/agregarla: solo color/talla/stock (el estado arranca ACTIVE). */
+export type NewVariantInput = Omit<
+  ProductVariant,
+  'id' | 'productId' | 'status' | 'soldAt' | 'salePrice' | 'lostAt'
+>;
+
 /** Datos de entrada para crear un producto (sin id/fechas, variantes sin id/productId). */
 export type NewProductInput = Omit<
   Product,
   'id' | 'createdAt' | 'updatedAt' | 'variants' | 'createdBy' | 'syncedAt'
 > & {
-  variants: Omit<ProductVariant, 'id' | 'productId'>[];
+  variants: NewVariantInput[];
 };
 
 interface ProductRow {
@@ -37,6 +43,10 @@ interface VariantRow {
   color: string | null;
   size: string | null;
   stock: number;
+  status: string | null;
+  sold_at: string | null;
+  sale_price: number | null;
+  lost_at: string | null;
 }
 
 /**
@@ -93,7 +103,12 @@ export class ProductService {
     ];
 
     for (const v of data.variants) {
-      const variant: ProductVariant = { ...v, id: uuidv4(), productId: product.id };
+      const variant: ProductVariant = {
+        ...v,
+        id: uuidv4(),
+        productId: product.id,
+        status: 'ACTIVE',
+      };
       product.variants.push(variant);
       set.push({
         statement:
@@ -110,11 +125,8 @@ export class ProductService {
    * Agrega una variante a un producto existente y devuelve la variante creada (con id).
    * Marca el producto como no sincronizado para que la sync lo vuelva a subir.
    */
-  async addVariant(
-    productId: string,
-    data: Omit<ProductVariant, 'id' | 'productId'>,
-  ): Promise<ProductVariant> {
-    const variant: ProductVariant = { ...data, id: uuidv4(), productId };
+  async addVariant(productId: string, data: NewVariantInput): Promise<ProductVariant> {
+    const variant: ProductVariant = { ...data, id: uuidv4(), productId, status: 'ACTIVE' };
     await this.db.executeSet([
       {
         statement:
@@ -257,6 +269,51 @@ export class ProductService {
     ]);
   }
 
+  /** Marca una prenda como VENDIDA con su precio real; queda en el registro (reportes). */
+  async markVariantSold(variantId: string, salePrice: number): Promise<void> {
+    await this.setVariantStatus(variantId, [
+      "status = 'SOLD'",
+      'sold_at = ?',
+      'sale_price = ?',
+      'lost_at = NULL',
+    ], [new Date().toISOString(), salePrice]);
+  }
+
+  /** Marca una prenda como EXTRAVIADA; queda en gris en el registro (reportes de pérdidas). */
+  async markVariantLost(variantId: string): Promise<void> {
+    await this.setVariantStatus(variantId, [
+      "status = 'LOST'",
+      'lost_at = ?',
+      'sold_at = NULL',
+      'sale_price = NULL',
+    ], [new Date().toISOString()]);
+  }
+
+  /** Revierte una prenda a DISPONIBLE (deshacer venta/extravío por error). */
+  async revertVariant(variantId: string): Promise<void> {
+    await this.setVariantStatus(variantId, [
+      "status = 'ACTIVE'",
+      'sold_at = NULL',
+      'sale_price = NULL',
+      'lost_at = NULL',
+    ], []);
+  }
+
+  /** Aplica un cambio de estado a la prenda y re-sincroniza su producto. */
+  private async setVariantStatus(variantId: string, sets: string[], values: unknown[]): Promise<void> {
+    await this.db.executeSet([
+      {
+        statement: `UPDATE product_variant SET ${sets.join(', ')} WHERE id = ?;`,
+        values: [...values, variantId],
+      },
+      {
+        statement:
+          'UPDATE product SET updated_at = ?, synced_at = NULL WHERE id = (SELECT product_id FROM product_variant WHERE id = ?);',
+        values: [new Date().toISOString(), variantId],
+      },
+    ]);
+  }
+
   private async loadVariants(productId: string): Promise<ProductVariant[]> {
     const rows = await this.db.query<VariantRow>(
       'SELECT * FROM product_variant WHERE product_id = ? ORDER BY color, size;',
@@ -313,6 +370,10 @@ export class ProductService {
       color: r.color ?? '',
       size: r.size ?? '',
       stock: r.stock,
+      status: (r.status as ProductVariant['status']) ?? 'ACTIVE',
+      soldAt: r.sold_at ?? undefined,
+      salePrice: r.sale_price ?? undefined,
+      lostAt: r.lost_at ?? undefined,
     };
   }
 }

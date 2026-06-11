@@ -1,13 +1,20 @@
+/** Estado de una prenda individual: disponible, vendida o extraviada. */
+export type VariantStatus = 'ACTIVE' | 'SOLD' | 'LOST';
+
 /**
- * ProductVariant — combinación color/talla con su stock.
- * `id` y `productId` provienen de la tabla product_variant (SQLite).
+ * ProductVariant — una prenda individual (color/talla) con su código. Cada prenda es una
+ * pieza única (stock 1). `id` y `productId` provienen de la tabla product_variant (SQLite).
  */
 export interface ProductVariant {
-  id: string;            // UUID v4 — necesario para updateVariantStock
+  id: string;            // UUID v4
   productId: string;     // FK → Product.id
   color: string;         // Ej: 'Rojo', 'Azul'
   size: string;          // Ej: 'S', 'M', 'L', 'XL'
-  stock: number;         // Unidades disponibles
+  stock: number;         // Unidades (siempre 1 por prenda)
+  status: VariantStatus; // ACTIVE = disponible | SOLD = vendida | LOST = extraviada
+  soldAt?: string;       // ISO 8601, cuándo se vendió
+  salePrice?: number;    // Precio real de venta (para reportes)
+  lostAt?: string;       // ISO 8601, cuándo se marcó extraviada
 }
 
 /**

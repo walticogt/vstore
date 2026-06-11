@@ -31,7 +31,7 @@ export class InventoryListPage {
   }
 
   stockTotal(product: Product): number {
-    return product.variants.reduce((sum, v) => sum + v.stock, 0);
+    return product.variants.filter((v) => v.status === 'ACTIVE').length;
   }
 
   private async applyFilters(): Promise<void> {

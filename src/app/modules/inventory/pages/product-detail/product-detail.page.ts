@@ -73,8 +73,9 @@ export class ProductDetailPage {
     }
   }
 
+  /** Stock disponible = prendas en estado ACTIVE (cada prenda es 1). */
   get stockTotal(): number {
-    return this.product?.variants.reduce((sum, v) => sum + v.stock, 0) ?? 0;
+    return this.product?.variants.filter((v) => v.status === 'ACTIVE').length ?? 0;
   }
 
   /** Código (tag) actualmente vinculado a una variante, si existe. */
@@ -95,28 +96,79 @@ export class ProductDetailPage {
     await this.router.navigate(['/tabs/link'], { queryParams: { product: this.product.id } });
   }
 
-  /** Quita una prenda (variante) del producto, previa confirmación. */
-  async removeVariant(variant: ProductVariant): Promise<void> {
+  /** Vende una prenda: pide el precio (pre-llenado con el del producto) y la marca VENDIDA. */
+  async sellVariant(variant: ProductVariant): Promise<void> {
     const label = `${variant.color || '—'} · ${variant.size || '—'}`;
+    const defaultPrice = this.product?.price ?? 0;
     const alert = await this.alertCtrl.create({
-      header: 'Quitar prenda',
-      message: `¿Quitar la prenda "${label}"? Su código quedará desechado (fuera de circulación).`,
+      header: 'Vender prenda',
+      message: `Precio de venta de "${label}":`,
+      inputs: [
+        {
+          name: 'price',
+          type: 'number',
+          value: defaultPrice,
+          placeholder: 'Precio (S/)',
+          min: 0,
+        },
+      ],
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
-        { text: 'Quitar', role: 'destructive', handler: () => void this.doRemoveVariant(variant.id) },
+        {
+          text: 'Vender',
+          handler: (data: { price?: string | number }) => {
+            const price = Number(data.price);
+            if (Number.isNaN(price) || price < 0) {
+              void this.toast('Precio inválido.');
+              return false;
+            }
+            void this.doSell(variant.id, price);
+            return true;
+          },
+        },
       ],
     });
     await alert.present();
   }
 
-  private async doRemoveVariant(variantId: string): Promise<void> {
-    await this.productService.removeVariant(variantId);
+  private async doSell(variantId: string, price: number): Promise<void> {
+    await this.productService.markVariantSold(variantId, price);
     await this.reload();
-    const toast = await this.toastCtrl.create({
-      message: 'Prenda quitada.',
-      duration: 1200,
-      position: 'bottom',
+    await this.toast('Prenda vendida.');
+  }
+
+  /** Marca una prenda como EXTRAVIADA (queda en gris, en el registro). */
+  async lostVariant(variant: ProductVariant): Promise<void> {
+    const label = `${variant.color || '—'} · ${variant.size || '—'}`;
+    const alert = await this.alertCtrl.create({
+      header: 'Marcar extraviada',
+      message: `¿Marcar "${label}" como extraviada? Queda registrada (en gris) para reportes de pérdidas.`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Extraviada',
+          role: 'destructive',
+          handler: () => {
+            void this.productService.markVariantLost(variant.id).then(() => {
+              void this.reload();
+              void this.toast('Prenda marcada extraviada.');
+            });
+          },
+        },
+      ],
     });
+    await alert.present();
+  }
+
+  /** Revierte una prenda vendida/extraviada a disponible (deshacer). */
+  async revertVariant(variant: ProductVariant): Promise<void> {
+    await this.productService.revertVariant(variant.id);
+    await this.reload();
+    await this.toast('Prenda nuevamente disponible.');
+  }
+
+  private async toast(message: string): Promise<void> {
+    const toast = await this.toastCtrl.create({ message, duration: 1200, position: 'bottom' });
     await toast.present();
   }
 

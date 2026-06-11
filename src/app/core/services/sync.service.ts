@@ -595,8 +595,18 @@ export class SyncService {
       for (const v of variants) {
         set.push({
           statement:
-            'INSERT INTO product_variant (id, product_id, color, size, stock) VALUES (?, ?, ?, ?, ?);',
-          values: [v.id, id, v.color ?? '', v.size ?? '', v.stock ?? 0],
+            'INSERT INTO product_variant (id, product_id, color, size, stock, status, sold_at, sale_price, lost_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);',
+          values: [
+            v.id,
+            id,
+            v.color ?? '',
+            v.size ?? '',
+            v.stock ?? 0,
+            v.status ?? 'ACTIVE',
+            v.soldAt ?? null,
+            v.salePrice ?? null,
+            v.lostAt ?? null,
+          ],
         });
       }
       await this.db.executeSet(set);

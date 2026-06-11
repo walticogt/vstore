@@ -63,6 +63,7 @@
     <ion-card
       *ngFor="let variant of product.variants"
       [color]="variant.id === highlightVariantId ? 'light' : undefined"
+      [class.inactive]="variant.status !== 'ACTIVE'"
     >
       <ion-card-content>
         <div class="variant-row">
@@ -79,14 +80,33 @@
                 Recuperado
               </ion-badge>
             </p>
+            <p *ngIf="variant.status === 'SOLD'" class="status-line">
+              <ion-badge color="medium">Vendido</ion-badge>
+              S/ {{ variant.salePrice | number: '1.2-2' }} · {{ variant.soldAt | date: 'short' }}
+            </p>
+            <p *ngIf="variant.status === 'LOST'" class="status-line">
+              <ion-badge color="medium">Extraviado</ion-badge>
+              {{ variant.lostAt | date: 'short' }}
+            </p>
           </div>
-          <ion-buttons>
-            <ion-button fill="outline" color="danger" (click)="removeVariant(variant)" title="Quitar prenda">
+
+          <ion-buttons *ngIf="variant.status === 'ACTIVE'">
+            <ion-button fill="solid" color="success" (click)="sellVariant(variant)" title="Vender">
+              <ion-icon slot="icon-only" name="cash"></ion-icon>
+            </ion-button>
+            <ion-button fill="outline" color="danger" (click)="lostVariant(variant)" title="Marcar extraviada">
               <ion-icon slot="icon-only" name="remove"></ion-icon>
             </ion-button>
           </ion-buttons>
+          <ion-buttons *ngIf="variant.status !== 'ACTIVE'">
+            <ion-button fill="clear" (click)="revertVariant(variant)" title="Deshacer (volver a disponible)">
+              <ion-icon slot="icon-only" name="arrow-undo"></ion-icon>
+            </ion-button>
+          </ion-buttons>
         </div>
+
         <ion-button
+          *ngIf="variant.status === 'ACTIVE'"
           fill="clear"
           size="small"
           [routerLink]="['/tabs/inventory/product', product.id, 'relink', variant.id]"
