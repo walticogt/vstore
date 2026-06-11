@@ -115,9 +115,34 @@
   h3 {
     margin: 0 0 0.25rem;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
   p {
     margin: 0.1rem 0;
+  }
+}
+
+.color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.supplier-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  ion-button {
+    --padding-start: 4px;
+    --padding-end: 4px;
+    height: 28px;
+    margin: 0;
   }
 }
 

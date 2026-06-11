@@ -23,7 +23,15 @@
         ></ion-input>
       </ion-item>
       <ion-item>
-        <ion-input label="Proveedor" labelPlacement="stacked" formControlName="supplier"></ion-input>
+        <ion-select label="Proveedor" labelPlacement="stacked" formControlName="supplierId" placeholder="Elige un proveedor" interface="popover">
+          <ion-select-option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</ion-select-option>
+        </ion-select>
+        <ion-button slot="end" fill="clear" (click)="addSupplierInline()" title="Nuevo proveedor">
+          <ion-icon slot="icon-only" name="add"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item>
+        <ion-input label="Guía / boleta / factura" labelPlacement="stacked" formControlName="purchaseDoc" placeholder="N° de documento"></ion-input>
       </ion-item>
       <ion-item>
         <ion-input label="SKU" labelPlacement="stacked" formControlName="sku"></ion-input>

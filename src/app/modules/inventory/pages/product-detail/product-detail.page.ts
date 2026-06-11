@@ -2,10 +2,13 @@ import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController, ToastController } from '@ionic/angular';
 
+import { Color, Supplier } from '../../../../core/models/config.model';
 import { Product, ProductVariant } from '../../../../core/models/product.model';
 import { TagCode } from '../../../../core/models/tag-code.model';
+import { ConfigService } from '../../../../core/services/config.service';
 import { ProductService } from '../../../../core/services/product.service';
 import { TagService } from '../../../../core/services/tag.service';
+import { whatsappUrl } from '../../../../core/utils/whatsapp.util';
 
 /**
  * ProductDetailPage — detalle del producto y sus prendas (variantes). Cada prenda es una
@@ -20,9 +23,11 @@ import { TagService } from '../../../../core/services/tag.service';
 })
 export class ProductDetailPage {
   product: Product | null = null;
+  supplier: Supplier | null = null;
   highlightVariantId = '';
   photoIndex = 0;
 
+  private colorHexByName = new Map<string, string>();
   private tagByVariant = new Map<string, TagCode>();
   private photoTimer?: ReturnType<typeof setInterval>;
 
@@ -31,6 +36,7 @@ export class ProductDetailPage {
     private readonly router: Router,
     private readonly productService: ProductService,
     private readonly tags: TagService,
+    private readonly config: ConfigService,
     private readonly toastCtrl: ToastController,
     private readonly alertCtrl: AlertController,
   ) {}
@@ -76,6 +82,11 @@ export class ProductDetailPage {
     return this.tagByVariant.get(variantId);
   }
 
+  /** Hex del color por su nombre (del catálogo), para pintar el círculo. */
+  colorHex(name: string): string | undefined {
+    return this.colorHexByName.get((name ?? '').trim().toLowerCase());
+  }
+
   /** Agrega otra prenda a este producto: escanea su código (stock 1, amarrada al QR/barras). */
   async addPrenda(): Promise<void> {
     if (!this.product) {
@@ -115,9 +126,30 @@ export class ProductDetailPage {
       return;
     }
     this.product = await this.productService.getProductById(id);
+    this.supplier = this.product?.supplierId
+      ? await this.config.getSupplierById(this.product.supplierId)
+      : null;
+    const colors: Color[] = await this.config.getColors();
+    this.colorHexByName = new Map(colors.map((c) => [c.name.trim().toLowerCase(), c.hex]));
     const activeTags = await this.tags.getActiveTagsByProduct(id);
     this.tagByVariant = new Map(
       activeTags.filter((t) => t.variantId).map((t) => [t.variantId as string, t]),
     );
+  }
+
+  /** Abre WhatsApp con el proveedor, mencionando este producto (mensaje editable). */
+  async openSupplierWhatsApp(): Promise<void> {
+    const storeName = localStorage.getItem('vstore.storeName') ?? 'mi tienda';
+    const message = `Hola ${this.supplier?.name ?? ''}, le escribe ${storeName}. Consulto por: ${this.product?.name ?? ''}.`;
+    const url = whatsappUrl(this.supplier?.whatsapp, message);
+    if (!url) {
+      const toast = await this.toastCtrl.create({
+        message: 'El proveedor no tiene WhatsApp.',
+        duration: 1500,
+      });
+      await toast.present();
+      return;
+    }
+    window.open(url, '_blank');
   }
 }

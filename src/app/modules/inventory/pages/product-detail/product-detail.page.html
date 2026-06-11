@@ -30,7 +30,20 @@
         <div class="product-meta">
           <h2>{{ product.name }}</h2>
           <p class="price">S/ {{ product.price | number: '1.2-2' }}</p>
-          <p *ngIf="product.supplier">Proveedor: {{ product.supplier }}</p>
+          <p *ngIf="supplier?.name || product.supplier" class="supplier-row">
+            Proveedor: {{ supplier?.name || product.supplier }}
+            <ion-button
+              *ngIf="supplier?.whatsapp"
+              size="small"
+              fill="clear"
+              color="success"
+              (click)="openSupplierWhatsApp()"
+              title="WhatsApp al proveedor"
+            >
+              <ion-icon slot="icon-only" name="logo-whatsapp"></ion-icon>
+            </ion-button>
+          </p>
+          <p *ngIf="product.purchaseDoc">Documento: {{ product.purchaseDoc }}</p>
           <p>Stock total: <strong>{{ stockTotal }}</strong></p>
         </div>
       </div>
@@ -54,11 +67,17 @@
       <ion-card-content>
         <div class="variant-row">
           <div class="variant-info">
-            <h3>{{ variant.color || '—' }} · {{ variant.size || '—' }}</h3>
+            <h3>
+              <span class="color-dot" *ngIf="colorHex(variant.color) as hex" [style.background]="hex"></span>
+              {{ variant.color || '—' }} · {{ variant.size || '—' }}
+            </h3>
             <p class="code-text">
               Código:
               <code *ngIf="variantTag(variant.id) as t">{{ t.id.slice(0, 8) | uppercase }}</code>
               <ion-text color="medium" *ngIf="!variantTag(variant.id)">sin código</ion-text>
+              <ion-badge *ngIf="variantTag(variant.id)?.origin === 'RECOVERED'" color="warning">
+                Recuperado
+              </ion-badge>
             </p>
           </div>
           <ion-buttons>

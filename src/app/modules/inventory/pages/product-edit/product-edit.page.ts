@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ToastController } from '@ionic/angular';
+import { AlertController, ToastController } from '@ionic/angular';
 
+import { Supplier } from '../../../../core/models/config.model';
+import { ConfigService } from '../../../../core/services/config.service';
 import { ProductService } from '../../../../core/services/product.service';
 
 /**
@@ -20,11 +22,13 @@ export class ProductEditPage {
   productId = '';
   saving = false;
   photos: string[] = [];
+  suppliers: Supplier[] = [];
 
   readonly form: FormGroup = this.fb.group({
     name: ['', Validators.required],
     price: [null, [Validators.required, Validators.min(0)]],
-    supplier: [''],
+    supplierId: [''],
+    purchaseDoc: [''],
     sku: [''],
     costPrice: [null],
   });
@@ -34,22 +38,68 @@ export class ProductEditPage {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly products: ProductService,
+    private readonly config: ConfigService,
     private readonly toastCtrl: ToastController,
+    private readonly alertCtrl: AlertController,
   ) {}
 
   async ionViewWillEnter(): Promise<void> {
     this.productId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.suppliers = await this.config.getSuppliers();
     const product = await this.products.getProductById(this.productId);
     if (product) {
       this.photos = product.images ? [...product.images] : [];
       this.form.patchValue({
         name: product.name,
         price: product.price,
-        supplier: product.supplier ?? '',
+        supplierId: product.supplierId ?? '',
+        purchaseDoc: product.purchaseDoc ?? '',
         sku: product.sku ?? '',
         costPrice: product.costPrice ?? null,
       });
     }
+  }
+
+  /** Nombre del proveedor seleccionado (para denormalizar en el producto). */
+  get selectedSupplierName(): string {
+    return this.suppliers.find((s) => s.id === this.form.value.supplierId)?.name ?? '';
+  }
+
+  /** Alta rápida de proveedor desde el formulario. */
+  async addSupplierInline(): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: 'Nuevo proveedor',
+      inputs: [
+        { name: 'name', type: 'text', placeholder: 'Nombre *' },
+        { name: 'whatsapp', type: 'tel', placeholder: 'WhatsApp (ej. 987654321)' },
+        { name: 'address', type: 'text', placeholder: 'Dirección' },
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Agregar',
+          handler: (data: { name?: string; whatsapp?: string; address?: string }) => {
+            if (!data.name?.trim()) {
+              void this.showToast('El nombre es obligatorio.', 'danger');
+              return false;
+            }
+            void this.createSupplier(data);
+            return true;
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  private async createSupplier(data: { name?: string; whatsapp?: string; address?: string }): Promise<void> {
+    const id = await this.config.addSupplier({
+      name: data.name ?? '',
+      whatsapp: data.whatsapp,
+      address: data.address,
+    });
+    this.suppliers = await this.config.getSuppliers();
+    this.form.patchValue({ supplierId: id });
   }
 
   async save(): Promise<void> {
@@ -62,14 +112,17 @@ export class ProductEditPage {
       const value = this.form.value as {
         name: string;
         price: number;
-        supplier: string;
+        supplierId: string;
+        purchaseDoc: string;
         sku: string;
         costPrice: number | null;
       };
       await this.products.updateProduct(this.productId, {
         name: value.name.trim(),
         price: Number(value.price),
-        supplier: value.supplier?.trim() || undefined,
+        supplierId: value.supplierId || undefined,
+        supplier: this.selectedSupplierName || undefined,
+        purchaseDoc: value.purchaseDoc?.trim() || undefined,
         sku: value.sku?.trim() || undefined,
         costPrice: value.costPrice != null ? Number(value.costPrice) : undefined,
         images: this.photos,
