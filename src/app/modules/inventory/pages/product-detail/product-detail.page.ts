@@ -137,22 +137,28 @@ export class ProductDetailPage {
     await this.toast('Prenda vendida.');
   }
 
-  /** Marca una prenda como EXTRAVIADA (queda en gris, en el registro). */
+  /** Marca una prenda como EXTRAVIADA (queda en gris). Requiere escribir "extraviada". */
   async lostVariant(variant: ProductVariant): Promise<void> {
     const label = `${variant.color || '—'} · ${variant.size || '—'}`;
     const alert = await this.alertCtrl.create({
       header: 'Marcar extraviada',
-      message: `¿Marcar "${label}" como extraviada? Queda registrada (en gris) para reportes de pérdidas.`,
+      message: `Vas a marcar "${label}" como extraviada (queda en gris para reportes de pérdidas). Para confirmar, escribe: extraviada`,
+      inputs: [{ name: 'confirm', type: 'text', placeholder: 'extraviada' }],
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
-          text: 'Extraviada',
+          text: 'Confirmar',
           role: 'destructive',
-          handler: () => {
+          handler: (data: { confirm?: string }) => {
+            if ((data.confirm ?? '').trim().toLowerCase() !== 'extraviada') {
+              void this.toast('Texto incorrecto. No se marcó nada.');
+              return false;
+            }
             void this.productService.markVariantLost(variant.id).then(() => {
               void this.reload();
               void this.toast('Prenda marcada extraviada.');
             });
+            return true;
           },
         },
       ],
@@ -160,11 +166,37 @@ export class ProductDetailPage {
     await alert.present();
   }
 
-  /** Revierte una prenda vendida/extraviada a disponible (deshacer). */
+  /**
+   * Revierte una prenda a disponible. La palabra de confirmación depende del estado:
+   * vendida → "anular compra"; extraviada → "recuperar".
+   */
   async revertVariant(variant: ProductVariant): Promise<void> {
-    await this.productService.revertVariant(variant.id);
-    await this.reload();
-    await this.toast('Prenda nuevamente disponible.');
+    const label = `${variant.color || '—'} · ${variant.size || '—'}`;
+    const isSold = variant.status === 'SOLD';
+    const word = isSold ? 'anular compra' : 'recuperar';
+    const alert = await this.alertCtrl.create({
+      header: isSold ? 'Anular compra' : 'Recuperar prenda',
+      message: `Vas a volver "${label}" a Disponible. Para confirmar, escribe: ${word}`,
+      inputs: [{ name: 'confirm', type: 'text', placeholder: word }],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Confirmar',
+          handler: (data: { confirm?: string }) => {
+            if ((data.confirm ?? '').trim().toLowerCase() !== word) {
+              void this.toast('Texto incorrecto. No se hizo nada.');
+              return false;
+            }
+            void this.productService.revertVariant(variant.id).then(() => {
+              void this.reload();
+              void this.toast(isSold ? 'Compra anulada. Prenda disponible.' : 'Prenda recuperada.');
+            });
+            return true;
+          },
+        },
+      ],
+    });
+    await alert.present();
   }
 
   private async toast(message: string): Promise<void> {
