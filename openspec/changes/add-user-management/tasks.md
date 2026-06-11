@@ -26,17 +26,17 @@
 
 ## 5. Gestión de usuarios (admin)
 
-- [ ] 5.1 Pantalla/ruta de gestión de usuarios (lista + búsqueda por correo), protegida por `roleGuard(['admin'])`.
-- [ ] 5.2 Asignar perfil desde una lista (admin/registrador/vendedor/comprador) y guardar.
-- [ ] 5.3 Enlace a gestión de usuarios desde el dashboard del admin.
+- [x] 5.1 Pantalla/ruta de gestión de usuarios (lista + búsqueda por correo), protegida por `roleGuard(['admin'])`.
+- [x] 5.2 Asignar perfil desde una lista (admin/registrador/vendedor/comprador) y guardar.
+- [x] 5.3 Enlace a gestión de usuarios desde el dashboard del admin.
 
 ## 6. Sincronización de usuarios
 
-- [ ] 6.1 Subir/bajar la colección `users` en cada `syncAll` y en la auto-subida (siempre, como catálogos).
-- [ ] 6.2 Excluir `app_user` del borrado "Eliminar del celular" Y de "Borrar todo" (`resetEverything`): los usuarios nunca se borran.
+- [x] 6.1 Subir/bajar la colección `users` en cada `syncAll` y en la auto-subida (siempre, como catálogos).
+- [x] 6.2 Excluir `app_user` del borrado "Eliminar del celular" Y de "Borrar todo" (`resetEverything`): los usuarios nunca se borran.
 - [ ] 6.3 Endurecer reglas Firestore de `users` (solo admin escribe `role`; cada usuario crea su doc como comprador).
 
 ## 7. Verificación
 
-- [ ] 7.1 `npx tsc -p tsconfig.check.json` y `npm run build` exitosos.
+- [x] 7.1 `npx tsc -p tsconfig.check.json` y `npm run build` exitosos.
 - [ ] 7.2 Prueba manual por rol: login Google (comprador por defecto), dueño como admin, admin reasigna rol, y cada dashboard/permiso (vendedor sin extraviar/ver vendidas, comprador solo catálogo).

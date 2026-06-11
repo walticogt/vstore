@@ -65,6 +65,17 @@
     </ion-card-content>
   </ion-card>
 
+  <!-- Gestión de usuarios (admin) -->
+  <ion-card *ngIf="can('manageUsers')" class="action-card accent-tertiary" routerLink="/users" button>
+    <ion-card-content>
+      <ion-icon class="action-icon" name="people" color="tertiary"></ion-icon>
+      <div>
+        <h3>Usuarios</h3>
+        <p>Cuentas y perfiles</p>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
   <!-- Stats -->
   <ion-card *ngIf="can('inventory')" class="stats-card">
     <ion-card-content>

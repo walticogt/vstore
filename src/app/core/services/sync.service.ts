@@ -735,6 +735,18 @@ export class SyncService {
         [id, p['name'], p['whatsapp'] ?? null, p['address'] ?? null, p['createdAt'] ?? now, now],
       );
     }
+
+    // Usuarios/perfiles: se sincronizan siempre (como catálogos). No se borran localmente.
+    for (const u of await this.fetchCollection('users')) {
+      const id = u['id'] as string;
+      if (!(await this.shouldOverwrite('app_user', id))) {
+        continue;
+      }
+      await this.db.execute(
+        'INSERT OR REPLACE INTO app_user (id, email, role, created_at, synced_at) VALUES (?, ?, ?, ?, ?);',
+        [id, u['email'], u['role'] ?? 'comprador', u['createdAt'] ?? now, now],
+      );
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -824,6 +836,15 @@ export class SyncService {
         createdAt: r['created_at'],
       });
       await this.markSynced('supplier', r.id);
+    }
+    for (const r of await this.db.query<SyncRow>('SELECT * FROM app_user WHERE synced_at IS NULL;')) {
+      await this.upload('users', r.id, {
+        id: r['id'],
+        email: r['email'],
+        role: r['role'],
+        createdAt: r['created_at'],
+      });
+      await this.markSynced('app_user', r.id);
     }
   }
 
