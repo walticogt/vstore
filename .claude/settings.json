@@ -12,7 +12,8 @@
       "Bash(git remote *)",
       "Bash(git branch *)",
       "PowerShell($apk = \"D:\\\\Projects\\\\VStore\\\\android\\\\app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\"; if \\(Test-Path $apk\\) { $f = Get-Item $apk; Write-Output \"APK GENERADO:\"; Write-Output \"  Ruta: $\\($f.FullName\\)\"; Write-Output \"  Tamano: $\\([math]::Round\\($f.Length/1MB,2\\)\\) MB\"; Write-Output \"  Fecha: $\\($f.LastWriteTime\\)\" } else { Write-Output \"No se encontro el APK en $apk\" })",
-      "Bash(\"/c/Program Files/Java/jdk-21.0.10/bin/java.exe\" -version)"
+      "Bash(\"/c/Program Files/Java/jdk-21.0.10/bin/java.exe\" -version)",
+      "Bash(python -)"
     ]
   }
 }

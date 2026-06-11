@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { SessionService } from '../../core/services/session.service';
+import { Permission, SessionService } from '../../core/services/session.service';
 import { SyncService } from '../../core/services/sync.service';
 
 /**
@@ -25,6 +25,11 @@ export class DashboardPage {
 
   get user(): string {
     return this.session.currentUser;
+  }
+
+  /** Permiso del rol actual (para mostrar/ocultar accesos). */
+  can(permission: Permission): boolean {
+    return this.session.can(permission);
   }
 
   async ionViewWillEnter(): Promise<void> {

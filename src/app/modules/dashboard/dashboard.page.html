@@ -20,7 +20,7 @@
   </div>
 
   <!-- Generar QR -->
-  <ion-card class="action-card accent-primary" routerLink="/tabs/generate" button>
+  <ion-card *ngIf="can('generate')" class="action-card accent-primary" routerLink="/tabs/generate" button>
     <ion-card-content>
       <ion-icon class="action-icon" name="qr-code" color="secondary"></ion-icon>
       <div>
@@ -33,7 +33,7 @@
   <!-- Escanear / Inventario -->
   <ion-grid class="ion-no-padding">
     <ion-row>
-      <ion-col size="6">
+      <ion-col size="6" *ngIf="can('scan')">
         <ion-card class="action-card tall accent-tertiary" routerLink="/tabs/link" button>
           <ion-card-content>
             <ion-icon class="action-icon" name="scan" color="tertiary"></ion-icon>
@@ -42,12 +42,12 @@
           </ion-card-content>
         </ion-card>
       </ion-col>
-      <ion-col size="6">
+      <ion-col size="6" *ngIf="can('inventory') || can('catalog')">
         <ion-card class="action-card tall accent-warning" routerLink="/tabs/inventory" button>
           <ion-card-content>
             <ion-icon class="action-icon" name="cube" color="warning"></ion-icon>
-            <h3>Inventario</h3>
-            <p>Stock actual</p>
+            <h3>{{ can('inventory') ? 'Inventario' : 'Catálogo' }}</h3>
+            <p>{{ can('inventory') ? 'Stock actual' : 'Productos disponibles' }}</p>
           </ion-card-content>
         </ion-card>
       </ion-col>
@@ -55,7 +55,7 @@
   </ion-grid>
 
   <!-- Reportes -->
-  <ion-card class="action-card accent-primary" routerLink="/reports" button>
+  <ion-card *ngIf="can('reports')" class="action-card accent-primary" routerLink="/reports" button>
     <ion-card-content>
       <ion-icon class="action-icon" name="bar-chart" color="secondary"></ion-icon>
       <div>
@@ -66,7 +66,7 @@
   </ion-card>
 
   <!-- Stats -->
-  <ion-card class="stats-card">
+  <ion-card *ngIf="can('inventory')" class="stats-card">
     <ion-card-content>
       <h4>Optimización de almacén</h4>
       <div class="stats-row">

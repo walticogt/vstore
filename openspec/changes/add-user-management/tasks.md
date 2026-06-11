@@ -14,15 +14,15 @@
 
 ## 3. Acceso por rol
 
-- [ ] 3.1 `roleGuard(roles[])` para proteger rutas (gestión de usuarios y reportes solo admin).
-- [ ] 3.2 Dashboard adaptado: armar tarjetas/accesos según `currentRole`.
+- [x] 3.1 `roleGuard(roles[])` para proteger rutas (gestión de usuarios y reportes solo admin).
+- [x] 3.2 Dashboard adaptado: armar tarjetas/accesos según `currentRole`.
 - [x] 3.3 Helper de permisos (`SessionService.can(...)`) basado en el rol.
 
 ## 4. Restricciones por rol en inventario/venta
 
-- [ ] 4.1 Vendedor: inventario y detalle muestran solo prendas `ACTIVE` (sin vendidas/extraviadas).
-- [ ] 4.2 Vendedor: ocultar "Agregar prenda" y "Marcar extraviada"; mantener Escanear y Vender.
-- [ ] 4.3 Comprador: vista de catálogo de solo lectura (lista de productos disponibles, sin acciones ni carrito).
+- [x] 4.1 Vendedor: inventario y detalle muestran solo prendas `ACTIVE` (sin vendidas/extraviadas).
+- [x] 4.2 Vendedor: ocultar "Agregar prenda" y "Marcar extraviada"; mantener Escanear y Vender.
+- [x] 4.3 Comprador: vista de catálogo de solo lectura (lista de productos disponibles, sin acciones ni carrito).
 
 ## 5. Gestión de usuarios (admin)
 

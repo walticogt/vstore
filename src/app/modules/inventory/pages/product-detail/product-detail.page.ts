@@ -7,6 +7,7 @@ import { Product, ProductVariant } from '../../../../core/models/product.model';
 import { TagCode } from '../../../../core/models/tag-code.model';
 import { ConfigService } from '../../../../core/services/config.service';
 import { ProductService } from '../../../../core/services/product.service';
+import { Permission, SessionService } from '../../../../core/services/session.service';
 import { TagService } from '../../../../core/services/tag.service';
 import { whatsappUrl } from '../../../../core/utils/whatsapp.util';
 
@@ -37,9 +38,24 @@ export class ProductDetailPage {
     private readonly productService: ProductService,
     private readonly tags: TagService,
     private readonly config: ConfigService,
+    private readonly session: SessionService,
     private readonly toastCtrl: ToastController,
     private readonly alertCtrl: AlertController,
   ) {}
+
+  /** Permiso del rol actual (para mostrar/ocultar acciones). */
+  can(permission: Permission): boolean {
+    return this.session.can(permission);
+  }
+
+  /**
+   * Prendas visibles según el rol: quien no puede ver vendidas (p. ej. vendedor/comprador)
+   * solo ve las disponibles (ACTIVE); el admin ve todas.
+   */
+  get visibleVariants(): ProductVariant[] {
+    const all = this.product?.variants ?? [];
+    return this.session.can('viewSold') ? all : all.filter((v) => v.status === 'ACTIVE');
+  }
 
   async ionViewWillEnter(): Promise<void> {
     this.highlightVariantId = this.route.snapshot.queryParamMap.get('variant') ?? '';

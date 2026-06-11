@@ -48,7 +48,7 @@
         </div>
       </div>
 
-      <ion-button expand="block" fill="outline" class="ion-margin-top" (click)="addPrenda()">
+      <ion-button *ngIf="can('addPrenda')" expand="block" fill="outline" class="ion-margin-top" (click)="addPrenda()">
         <ion-icon slot="start" name="add"></ion-icon>
         Agregar prenda (escanear código)
       </ion-button>
@@ -61,7 +61,7 @@
 
   <ion-list *ngIf="product">
     <ion-card
-      *ngFor="let variant of product.variants"
+      *ngFor="let variant of visibleVariants"
       [color]="variant.id === highlightVariantId ? 'light' : undefined"
       [class.inactive]="variant.status !== 'ACTIVE'"
     >
@@ -91,14 +91,14 @@
           </div>
 
           <ion-buttons *ngIf="variant.status === 'ACTIVE'">
-            <ion-button fill="solid" color="success" (click)="sellVariant(variant)" title="Vender">
+            <ion-button *ngIf="can('sell')" fill="solid" color="success" (click)="sellVariant(variant)" title="Vender">
               <ion-icon slot="icon-only" name="cash"></ion-icon>
             </ion-button>
-            <ion-button fill="outline" color="danger" (click)="lostVariant(variant)" title="Marcar extraviada">
+            <ion-button *ngIf="can('markLost')" fill="outline" color="danger" (click)="lostVariant(variant)" title="Marcar extraviada">
               <ion-icon slot="icon-only" name="remove"></ion-icon>
             </ion-button>
           </ion-buttons>
-          <ion-buttons *ngIf="variant.status !== 'ACTIVE'">
+          <ion-buttons *ngIf="variant.status !== 'ACTIVE' && can('markLost')">
             <ion-button fill="clear" (click)="revertVariant(variant)" title="Deshacer (volver a disponible)">
               <ion-icon slot="icon-only" name="arrow-undo"></ion-icon>
             </ion-button>
@@ -106,7 +106,7 @@
         </div>
 
         <ion-button
-          *ngIf="variant.status === 'ACTIVE'"
+          *ngIf="variant.status === 'ACTIVE' && can('scan')"
           fill="clear"
           size="small"
           [routerLink]="['/tabs/inventory/product', product.id, 'relink', variant.id]"
@@ -117,8 +117,8 @@
       </ion-card-content>
     </ion-card>
 
-    <ion-item *ngIf="product.variants.length === 0" lines="none">
-      <ion-label color="medium">Sin variantes registradas.</ion-label>
+    <ion-item *ngIf="visibleVariants.length === 0" lines="none">
+      <ion-label color="medium">Sin prendas disponibles.</ion-label>
     </ion-item>
   </ion-list>
 
